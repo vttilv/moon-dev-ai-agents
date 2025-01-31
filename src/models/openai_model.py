@@ -11,6 +11,11 @@ class OpenAIModel(BaseModel):
     """Implementation for OpenAI's models"""
     
     AVAILABLE_MODELS = {
+        "o3-mini": {
+            "description": "Fast reasoning model with problem-solving capabilities",
+            "input_price": "$0.006/1K tokens",
+            "output_price": "$0.018/1K tokens"
+        },
         "o1": {
             "description": "Latest O1 model with reasoning capabilities",
             "input_price": "$0.01/1K tokens",
@@ -42,21 +47,38 @@ class OpenAIModel(BaseModel):
     def generate_response(self, system_prompt, user_content, **kwargs):
         """Generate a response using the OpenAI model"""
         try:
-            # Special handling for O1 models
-            if self.model_name.startswith('o1'):
-                # Remove unsupported parameters for O1
-                if 'max_tokens' in kwargs:
-                    kwargs['max_completion_tokens'] = kwargs.pop('max_tokens')
-                if 'temperature' in kwargs:
-                    kwargs.pop('temperature')
+            # Special handling for O3 models
+            if self.model_name.startswith('o3'):
+                cprint("🧠 Using O3 model with reasoning capabilities...", "cyan")
+                messages = [
+                    {
+                        "role": "user",
+                        "content": user_content
+                    }
+                ]
                 
-                # O1 models use user role for both messages
+                # Add reasoning effort for O3 models
+                kwargs["reasoning_effort"] = kwargs.get("reasoning_effort", "medium")
+                
+                # Remove unsupported parameters for O3
+                kwargs.pop('max_tokens', None)
+                kwargs.pop('temperature', None)
+                
+            # Special handling for O1 models
+            elif self.model_name.startswith('o1'):
                 messages = [
                     {
                         "role": "user",
                         "content": f"Instructions: {system_prompt}\n\nInput: {user_content}"
                     }
                 ]
+                
+                # Remove unsupported parameters for O1
+                if 'max_tokens' in kwargs:
+                    kwargs['max_completion_tokens'] = kwargs.pop('max_tokens')
+                kwargs.pop('temperature', None)
+                
+            # Standard handling for other models
             else:
                 messages = [
                     {
@@ -68,6 +90,8 @@ class OpenAIModel(BaseModel):
                         "content": user_content
                     }
                 ]
+            
+            cprint(f"🤔 Moon Dev's {self.model_name} is thinking...", "yellow")
             
             # Create completion with appropriate parameters
             response = self.client.chat.completions.create(

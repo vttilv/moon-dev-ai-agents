@@ -1,0 +1,33 @@
+STRATEGY_NAME: DynamicValidation
+
+STRATEGY_DETAILS:
+
+This strategy, named "DynamicValidation," focuses on market structure, supply and demand zones, and risk-reward management. It does not rely on traditional indicators or patterns but instead uses price action to identify trends and trade opportunities.
+
+1. Market Structure and Trend Identification:
+   - An uptrend is characterized by higher highs and higher lows.
+   - A downtrend is characterized by lower lows and lower highs.
+   - A low is considered valid only if it breaks the previous high.
+   - When price breaks a valid low, the new low is transferred to the breakout point.
+
+2. Supply and Demand Zones:
+   - Demand zones are identified in uptrends, and supply zones are identified in downtrends.
+   - Buy from demand zones and sell from supply zones.
+   - Demand zones are marked by finding an area of consolidation or a point where price moves sideways before a sharp move upward.
+   - Supply zones are marked by finding an area of consolidation or a point where price moves sideways before a sharp move downward.
+
+3. Entry Rules:
+   - Enter a long trade when price re-enters a demand zone.
+   - Set the stop loss right below the demand zone.
+   - Set the take profit at recent highs.
+   - Enter a short trade when price re-enters a supply zone in a downtrend.
+   - Set the stop loss right above the supply zone.
+   - Set the take profit at recent lows.
+
+4. Risk Management:
+   - Only take trades if the risk-reward ratio is above 2.5:1. This means that for every $100 risked, you aim to make $250 or more.
+
+5. Required Tools:
+   - A charting platform with rectangle drawing tools.
+
+In summary, the DynamicValidation strategy involves understanding market structure, identifying supply and demand zones, and employing a strict risk-reward management system. By focusing on these key components, traders can potentially increase their profitability and make calculated trades in the financial markets.

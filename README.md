@@ -88,9 +88,10 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 1/31 - updated the chat agent, this is the agent i will use for all live streams to manage chat with ai
 - [x] 1/30 - created the chat agent to manage the live stream chat
 - [x] 1/30 - groq added & gemini added. new interface for handling the ever growing amount of ai's we have access to. src/models/README.md
-- [x] 1/29 - deepseek hosted locally on lambda labs, see the api script if you want to launch your own src/scripts/deepseek_api.py. i will host free r1 ai during my stream check the discord for the new ip to call and here is the example of how to call it src/scripts/deepseek_local_call.py
+- [x] 1/29 - deepseek hosted locally on lambda labs, see the api script if you want to launch your own src/scripts/deepseek_api.py. how to call it src/scripts/deepseek_local_call.py
 - [x] 1/27 - built a tweet agent and video agent 
 - [x] 1/23 - build an rbi agent that codes backtests based on trading strategy videos, pdfs or words
 - [x] 1/20 - built the funding rate arbitrage trading agent to annnounce when there is a funding rate arbitrage between hyperliquid tokens and spot solana tokens. later we can update this to place the trades

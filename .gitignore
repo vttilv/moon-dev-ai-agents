@@ -111,6 +111,7 @@ src/data/chat_agent/config.json
 
 # Add prompt log to gitignore
 src/data/chat_agent/prompt_log.txt
+src/frontend
 
 # Also add the directory in case it doesn't exist yet
 src/data/chat_agent/*.txt

@@ -1,0 +1,35 @@
+STRATEGY NAME: Stochastic Reversal Oscillator
+
+STRATEGY DETAILS:
+
+Key Strategy Components:
+- Uses the Stochastic RSI indicator as the primary signal generator
+- Focuses on identifying overbought and oversold conditions in the market
+- Employs a time-frame specific approach, utilizing different Stochastic RSI settings for short-term (hourly), medium-term (4-hour), and long-term (daily/weekly) trading
+
+Entry/Exit Rules:
+- For long-term trades (weekly/daily):
+  - Buy when Stochastic RSI crosses below the 15% oversold level
+  - Sell when Stochastic RSI crosses above the 80% overbought level
+- For medium-term trades (4-hour):
+  - Buy when Stochastic RSI crosses below the 20% oversold level
+  - Sell when Stochastic RSI crosses above the 80% overbought level
+- For short-term trades (hourly):
+  - Buy when Stochastic RSI crosses below the 20% oversold level
+  - Sell when Stochastic RSI crosses above the 80% overbought level
+
+Risk Management:
+- Use a consistent position sizing strategy (e.g., fixed percentage of account)
+- Implement stop-loss orders to limit downside risk
+- Consider taking partial profits at key overbought/oversold levels
+
+Required Indicators:
+- Stochastic RSI (configured for the appropriate time frame)
+
+Key Principles:
+- Focus on the Stochastic RSI indicator as the primary signal, ignoring market noise and emotions
+- Use the appropriate time frame Stochastic RSI settings based on your trading strategy (short-term, medium-term, long-term)
+- Maintain discipline and follow the indicator signals, even if they don't align with personal market opinions
+- Compound gains by reinvesting profits into subsequent trades
+
+This Stochastic Reversal Oscillator strategy aims to capitalize on overbought and oversold conditions in the market, using the Stochastic RSI indicator to time entries and exits across multiple time frames. By following the signals provided by the indicator and maintaining a disciplined, unemotional approach, traders can potentially generate consistent profits over the long term.
