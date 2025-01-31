@@ -13,8 +13,8 @@ class OpenAIModel(BaseModel):
     AVAILABLE_MODELS = {
         "o3-mini": {
             "description": "Fast reasoning model with problem-solving capabilities",
-            "input_price": "$0.006/1K tokens",
-            "output_price": "$0.018/1K tokens"
+            "input_price": "$1.10/1m tokens",
+            "output_price": "$4.40/1m tokens"
         },
         "o1": {
             "description": "Latest O1 model with reasoning capabilities",

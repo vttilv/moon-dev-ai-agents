@@ -88,6 +88,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 1/31 - added o3-mini to the model factory
 - [x] 1/31 - updated the chat agent, this is the agent i will use for all live streams to manage chat with ai
 - [x] 1/30 - created the chat agent to manage the live stream chat
 - [x] 1/30 - groq added & gemini added. new interface for handling the ever growing amount of ai's we have access to. src/models/README.md

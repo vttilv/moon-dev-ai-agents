@@ -21,6 +21,7 @@ Latest Models:
 - `gpt-4o-mini`: Smaller, faster GPT-4 Optimized model (Good balance of speed/quality)
 - `o1`: Latest O1 model (Dec 2024) - Shows reasoning process
 - `o1-mini`: Smaller O1 model - Shows reasoning process
+- `o3-mini`: Brand new fast reasoning model
 
 ### Claude Models (Anthropic)
 Latest Models:
