@@ -609,7 +609,7 @@ class ChatAgent:
         """
         # Add API key warning
         if any(key_word in question.lower() for key_word in ['api', 'key', 'token', 'secret']):
-            return "⚠️ For security reasons, I cannot process messages containing API keys or tokens. Please never share API keys in chat! 🔒"
+            return None
             
         retries = 0
         max_retries = 3

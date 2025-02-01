@@ -116,9 +116,9 @@ class TimeframeTrendAnalyzer(Strategy):
 if __name__ == '__main__':
     print("🌙✨ [Main] Starting backtest execution... 🚀")
     # Example backtest execution (this block should be adapted to your backtesting framework):
-    # from backtesting import Backtest
-    # data = pd.read_csv('your_data.csv', parse_dates=True, index_col='Date')
-    # bt = Backtest(data, TimeframeTrendAnalyzer, cash=10000, commission=0.002)
-    # stats = bt.run()
-    # print(stats)
+    from backtesting import Backtest
+    data = pd.read_csv('your_data.csv', parse_dates=True, index_col='Date')
+    bt = Backtest(data, TimeframeTrendAnalyzer, cash=10000, commission=0.002)
+    stats = bt.run()
+    print(stats)
     print("🌙✨ [Main] Backtest execution completed. 🚀")
