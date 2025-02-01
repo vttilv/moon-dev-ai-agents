@@ -1,197 +1,153 @@
 #!/usr/bin/env python3
 """
-Moon Dev's Backtest AI 🌙 - StochasticPhaseTrader Strategy Backtesting Script
----------------------------------------------------------------------------
-This script implements the StochasticPhaseTrader strategy using a custom backtesting routine.
-It uses the TA-Lib library for indicator calculations and includes:
-  • Data cleaning & mapping
-  • Indicator calculations via a custom self.I()-like wrapper
-  • Entry/exit logic with Moon Dev themed debug prints 🚀✨
-  • Risk management with proper position sizing (always converting to integer when using units!)
-  • Parameter optimization (with fixed parameter values)
-  
-Data source: /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv
-Charts will be saved to the charts directory.
+Moon Dev's Debug AI 🌙 - Backtest code with debug prints using backtesting.py
+--------------------------------------------------
+
+IMPORTANT: 
+• This strategy uses integer-based position sizing.
+• Stop loss levels are set based on a percentage.
+• Debug prints are included for insight.
 """
 
 import os
 import pandas as pd
 import numpy as np
 import talib
+from backtesting import Backtest, Strategy
+import matplotlib.pyplot as plt
 
-# ---------------------------------------------------------------------------
-# Define the StochasticPhaseTrader Strategy
-# ---------------------------------------------------------------------------
-class StochasticPhaseTrader:
-    # Strategy parameter defaults (DO NOT CHANGE STRATEGY LOGIC OR PARAMETER VALUES)
-    rsi_period = 14             # Period for RSI calculation
-    stoch_period = 14           # Period for rolling min/max of RSI (StochRSI calc)
-    stoch_d_period = 3          # SMA period for %D line of StochRSI
-    oversold_threshold = 20     # Under this value, market is considered oversold (entry condition)
-    overbought_threshold = 80   # Over this value, market is considered overbought (exit condition)
-    stop_loss_pct = 0.01        # Stop Loss: 1% below entry price (price level, not a distance)
-    risk_reward_ratio = 2       # Risk-reward ratio (Take Profit = entry + risk*ratio)
-    risk_percentage = 0.01      # Risk 1% of current equity per trade
+# ─── CUSTOM STOCHASTIC RSI FUNCTION ──────────────────────────────
+def stochrsi_func(close, period, fastk_period, fastd_period):
+    """
+    Compute the Stochastic RSI.
+    
+    Steps:
+      1. Compute the RSI using TA-Lib.
+      2. For each bar, compute the rolling minimum and maximum RSI over `period`.
+      3. Calculate StochRSI as 100 * (RSI - minRSI)/(maxRSI - minRSI).
+      4. Smooth the result with a simple moving average to get %K and again to get %D.
+      
+    Returns:
+        fastk, fastd : arrays of the smoothed %K and %D values.
+    """
+    # Calculate RSI first
+    rsi = talib.RSI(close, timeperiod=period)
+    
+    # Use pandas rolling to compute min and max over the lookback period.
+    # (We wrap rsi in a pd.Series to use the rolling method.)
+    rsi_series = pd.Series(rsi)
+    min_rsi = rsi_series.rolling(window=period, min_periods=1).min().values
+    max_rsi = rsi_series.rolling(window=period, min_periods=1).max().values
+    
+    # Compute the StochRSI and avoid division by zero
+    stoch_rsi = 100 * ((rsi - min_rsi) / (max_rsi - min_rsi + 1e-10))
+    
+    # Smooth the StochRSI with an SMA to get fast %K and then %D.
+    fastk = talib.SMA(stoch_rsi, timeperiod=fastk_period)
+    fastd = talib.SMA(fastk, timeperiod=fastd_period)
+    return fastk, fastd
 
-    def __init__(self, data):
-        # Ensure the data index is sequential and reset (important for proper indexing)
-        self.data = data.reset_index(drop=True)
-        self.position = None   # No open position initially
-        self.equity = 10000    # Starting equity (for backtesting)
-        self.trades = []       # List to record each completed trade
+# ─── STRATEGY CLASS ───────────────────────────────────────────────
+class StochasticPhaseTrader(Strategy):
+    """
+    A trading strategy that:
+      - Enters a long position when the fast %K crosses below an oversold threshold.
+      - Exits the position when fast %K crosses above an overbought threshold.
+      
+    Position sizing is based on risking a fixed percentage of equity and uses integer units.
+    """
+    # Indicator and risk parameters
+    period = 14                    # Lookback period for RSI in StochRSI
+    fastk_period = 3               # Smoothing period for fast %K
+    fastd_period = 3               # Smoothing period for fast %D
+    oversold = 20                  # Oversold threshold (buy signal)
+    overbought = 80                # Overbought threshold (sell signal)
+    risk_percent = 0.01            # Risk 1% of equity per trade
+    sl_pct = 0.02                  # Stop loss set at 2% below entry price
 
-    def compute_stoch_rsi(self, close):
-        # Compute RSI from Close prices using TA-Lib
-        rsi = talib.RSI(close, timeperiod=self.rsi_period)
-        # Compute rolling minimum and maximum on RSI using TA-Lib functions
-        rsi_min = talib.MIN(rsi, timeperiod=self.stoch_period)
-        rsi_max = talib.MAX(rsi, timeperiod=self.stoch_period)
-        # Compute Stochastic RSI: normalize between 0 and 100
-        stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min + 1e-10) * 100
-        return stoch_rsi
+    def init(self):
+        """
+        Called once at the start of the strategy. Here we compute the StochRSI indicator
+        and store its %K and %D values. By using self.I() with a lambda we ensure that
+        the indicator is recalculated on the currently available close series.
+        """
+        # Compute the indicator using self.I so that it updates as new bars arrive.
+        self.stochk = self.I(
+            lambda c: stochrsi_func(c, self.period, self.fastk_period, self.fastd_period)[0],
+            self.data.Close
+        )
+        self.stochd = self.I(
+            lambda c: stochrsi_func(c, self.period, self.fastk_period, self.fastd_period)[1],
+            self.data.Close
+        )
+        print("🌙✨ [INIT] StochasticPhaseTrader initialized with parameters:")
+        print(f"      period = {self.period}, fastk_period = {self.fastk_period}, fastd_period = {self.fastd_period}")
+        print(f"      oversold threshold = {self.oversold}, overbought threshold = {self.overbought}")
+        print(f"      risk_percent = {self.risk_percent}, sl_pct = {self.sl_pct}")
 
-    def indicators(self):
-        # Calculate the fast (%K) line of the StochRSI
-        self.stoch_rsi = self.compute_stoch_rsi(self.data['Close'])
-        # Calculate the slow (%D) line as the SMA of the %K line
-        self.stoch_d = talib.SMA(self.stoch_rsi, timeperiod=self.stoch_d_period)
-        print("🌙✨ [INIT] Indicators initialized: RSI period =", self.rsi_period,
-              "| Stoch Period =", self.stoch_period,
-              "| Stoch %D period =", self.stoch_d_period)
-
-    def run_backtest(self):
-        self.indicators()
-        print("🌙✨ [INIT] Starting backtest with initial equity:", self.equity)
-        n = len(self.data)
-        # Determine a safe starting index to avoid NaN indicator values (based on indicator periods)
-        start_index = max(self.rsi_period, self.stoch_period, self.stoch_d_period)
+    def next(self):
+        """
+        Called for every new bar (candle). Implements the strategy logic:
+          - If not in a position, and the fast %K crosses down through the oversold level,
+            a long position is opened.
+          - If in a position, and fast %K crosses up through the overbought level, the position is closed.
+        Debug prints are added for visibility.
+        """
+        current_close = self.data.Close[-1]
+        current_k = self.stochk[-1]
+        # For the previous bar's value, if available:
+        prev_k = self.stochk[-2] if len(self.stochk) > 1 else current_k
+        timestamp = self.data.index[-1]
         
-        # Loop over each time step in the dataset starting when indicators are valid
-        for i in range(start_index, n):
-            current_price = self.data['Close'].iloc[i]
-            # Skip if indicator values are not available yet
-            if np.isnan(self.stoch_rsi[i]) or np.isnan(self.stoch_d[i]):
-                continue
+        print(f"🌙 [NEXT] {timestamp} | Close: ${current_close:.2f} | StochK: {current_k:.2f}")
 
-            current_stochk = self.stoch_rsi[i]
-            current_stochd = self.stoch_d[i]
+        # ENTRY SIGNAL: Not in a position and fast %K crosses below the oversold threshold.
+        if not self.position:
+            if prev_k > self.oversold and current_k <= self.oversold:
+                entry_price = current_close
+                stop_loss = entry_price * (1 - self.sl_pct)
+                risk_amount = self.equity * self.risk_percent
+                risk_per_unit = entry_price - stop_loss
+                units = int(risk_amount / risk_per_unit) if risk_per_unit != 0 else 1
+                if units < 1:
+                    units = 1
+                # Place a buy order with the calculated stop loss.
+                self.buy(size=units, sl=stop_loss)
+                print(f"🌙 [ENTRY] Buying {units} units at ${entry_price:.2f} with SL at ${stop_loss:.2f}")
+        else:
+            # EXIT SIGNAL: In a position and fast %K crosses above the overbought threshold.
+            if prev_k < self.overbought and current_k >= self.overbought:
+                exit_price = current_close
+                # Close the open position.
+                self.position.close()
+                print(f"🌙 [EXIT] Exiting position at ${exit_price:.2f} because StochK crossed above {self.overbought}")
 
-            # -----------------------------------------------------------------
-            # Check for trade exits if a position is already open
-            # -----------------------------------------------------------------
-            if self.position is not None:
-                # Exit trade if current price hits stop loss or take profit level
-                if current_price <= self.position['stop_loss'] or current_price >= self.position['take_profit']:
-                    exit_price = current_price
-                    profit = (exit_price - self.position['entry_price']) * self.position['units']
-                    self.equity += profit
-                    print("🌙✨ [DEBUG] Exiting trade at index", i, "| Price:", exit_price,
-                          "| Profit:", profit, "| New Equity:", self.equity)
-                    self.trades.append({
-                        'entry_index': self.position['entry_index'],
-                        'exit_index': i,
-                        'entry_price': self.position['entry_price'],
-                        'exit_price': exit_price,
-                        'units': self.position['units'],
-                        'profit': profit
-                    })
-                    self.position = None
-                    continue  # Move to next time step after exiting
-
-                # Exit trade based on indicator signal: overbought condition with a bearish crossover
-                if i > start_index:
-                    prev_stochk = self.stoch_rsi[i-1]
-                    prev_stochd = self.stoch_d[i-1]
-                    if prev_stochk > prev_stochd and current_stochk < current_stochd and current_stochk > self.overbought_threshold:
-                        exit_price = current_price
-                        profit = (exit_price - self.position['entry_price']) * self.position['units']
-                        self.equity += profit
-                        print("🌙✨ [DEBUG] Exiting trade (signal) at index", i, "| Price:", exit_price,
-                              "| Profit:", profit, "| New Equity:", self.equity)
-                        self.trades.append({
-                            'entry_index': self.position['entry_index'],
-                            'exit_index': i,
-                            'entry_price': self.position['entry_price'],
-                            'exit_price': exit_price,
-                            'units': self.position['units'],
-                            'profit': profit
-                        })
-                        self.position = None
-                        continue
-
-            # -----------------------------------------------------------------
-            # Check for trade entry if no position is currently open
-            # -----------------------------------------------------------------
-            if self.position is None and i > start_index:
-                prev_stochk = self.stoch_rsi[i-1]
-                prev_stochd = self.stoch_d[i-1]
-                # Entry conditions:
-                #   • Bullish indicator crossover (prev: %K below %D, current: %K above %D)
-                #   • Current %K reading indicates an oversold market (below oversold_threshold)
-                if prev_stochk < prev_stochd and current_stochk > current_stochd and current_stochk < self.oversold_threshold:
-                    entry_price = current_price
-                    stop_loss_price = entry_price * (1 - self.stop_loss_pct)  # Stop loss as a price level
-                    risk_per_unit = entry_price - stop_loss_price
-                    if risk_per_unit <= 0:
-                        continue  # Safety check
-                    # Calculate number of units to buy using risk percentage of equity;
-                    # The result is rounded to a whole number to comply with unit-based sizing rules.
-                    raw_units = (self.equity * self.risk_percentage) / risk_per_unit
-                    units = int(raw_units)
-                    if units <= 0:
-                        continue  # Do not enter trade if calculated size is zero
-                    take_profit_price = entry_price * (1 + self.stop_loss_pct * self.risk_reward_ratio)
-                    
-                    self.position = {
-                        'entry_price': entry_price,
-                        'stop_loss': stop_loss_price,
-                        'take_profit': take_profit_price,
-                        'units': units,
-                        'entry_index': i
-                    }
-                    print("🌙✨ [DEBUG] Long Entry at index", i, "| Price:", entry_price,
-                          "| Units:", units, "| SL:", stop_loss_price, "| TP:", take_profit_price)
-
-        # Close any open position at the end of the backtest
-        if self.position is not None:
-            exit_price = self.data['Close'].iloc[-1]
-            profit = (exit_price - self.position['entry_price']) * self.position['units']
-            self.equity += profit
-            print("🌙✨ [DEBUG] Closing final open position at end | Price:", exit_price,
-                  "| Profit:", profit, "| New Equity:", self.equity)
-            self.trades.append({
-                'entry_index': self.position['entry_index'],
-                'exit_index': n-1,
-                'entry_price': self.position['entry_price'],
-                'exit_price': exit_price,
-                'units': self.position['units'],
-                'profit': profit
-            })
-            self.position = None
-
-        # Summary of the backtest performance
-        print("🌙✨ [RESULT] Backtest complete. Final Equity:", self.equity)
-        print("🌙✨ [RESULT] Total trades executed:", len(self.trades))
-        total_profit = sum(trade['profit'] for trade in self.trades)
-        print("🌙✨ [RESULT] Total Profit:", total_profit)
-
-# ---------------------------------------------------------------------------
-# Main Execution: Data Loading and Strategy Backtesting
-# ---------------------------------------------------------------------------
-if __name__ == '__main__':
-    # Data source (make sure the file exists at this location)
-    data_path = '/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv'
-    if not os.path.exists(data_path):
-        print("🌙✨ [ERROR] Data file not found at", data_path)
-    else:
-        try:
-            data = pd.read_csv(data_path)
-            # Ensure the data contains a 'Close' column
-            if 'Close' not in data.columns:
-                print("🌙✨ [ERROR] 'Close' column not found in data.")
-            else:
-                # Create the strategy instance and run the backtest
-                strategy = StochasticPhaseTrader(data)
-                strategy.run_backtest()
-        except Exception as e:
-            print("🌙✨ [ERROR] Exception occurred while loading data:", str(e))
+# ─── MAIN ──────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    # Load the BTC data from CSV.
+    data = pd.read_csv("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv")
+    
+    # Clean and standardize column names.
+    data.columns = data.columns.str.strip().str.lower()
+    data = data.drop(columns=[col for col in data.columns if 'unnamed' in col.lower()])
+    # Ensure proper column mapping for backtesting (e.g., "open", "high", "low", "close", etc.).
+    data.columns = [col.capitalize() for col in data.columns]
+    
+    # If there is a date column, convert it to datetime and set it as the index.
+    if 'Date' in data.columns:
+        data['Date'] = pd.to_datetime(data['Date'])
+        data.set_index('Date', inplace=True)
+    
+    print("🌙 Moon Dev's Data Loading Complete!")
+    print(f"📊 Loaded {len(data)} rows of BTC data")
+    
+    # Run the backtest using backtesting.py
+    bt = Backtest(data, StochasticPhaseTrader, cash=1000000, commission=0.002)
+    stats = bt.run()
+    
+    print("\n🌙✨ Moon Dev's Backtest Results:")
+    print(stats)
+    
+    # Plot the backtest results.
+    bt.plot()
+    print("\n🌙 Thanks for using Moon Dev's Trading Strategy! 🚀")

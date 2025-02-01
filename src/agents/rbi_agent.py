@@ -38,12 +38,14 @@ RESEARCH_CONFIG = {
 
 BACKTEST_CONFIG = {
     "type": "openai",
-    "name": "o3-mini"  # More capable model for complex backtest creation
+    "name": "o3-mini",             # More capable model for complex backtest creation
+    "reasoning_effort": "high"      # Maximum reasoning for O3 models
 }
 
 DEBUG_CONFIG = {
     "type": "openai",
-    "name": "o3-mini"  # Technical debugging with reasoning capabilities
+    "name": "o3-mini",             # Technical debugging with reasoning capabilities
+    "reasoning_effort": "high"      # Maximum reasoning for O3 models
 }
 
 PACKAGE_CONFIG = {
@@ -347,15 +349,21 @@ def chat_with_model(system_prompt, user_content, model_config):
         cprint(f"📝 System prompt length: {len(system_prompt)} chars", "cyan")
         cprint(f"📝 User content length: {len(user_content)} chars", "cyan")
 
-        # For O3 models, combine prompts differently and use specific parameters
-        if model_config["name"].startswith('o3'):
-            cprint("🧠 Using O3 model with reasoning capabilities...", "cyan")
+        # For OpenAI O3 models, handle reasoning effort
+        if model_config["type"] == "openai" and model_config["name"].startswith('o3'):
+            # Get reasoning effort from config or default to medium
+            reasoning_effort = model_config.get("reasoning_effort", "medium")
+            juice_emoji = {"low": "🥤", "medium": "⚡️", "high": "🚀"}
+            
+            cprint(f"🧠 Using O3 model with {reasoning_effort.upper()} reasoning capabilities... {juice_emoji[reasoning_effort]}", "cyan")
+            cprint(f"🌙 Moon Dev's juice level: {reasoning_effort.upper()}! ✨", "yellow")
+            
             # Combine system prompt and user content for O3
             combined_prompt = f"{system_prompt}\n\n{user_content}"
             response = model.generate_response(
                 system_prompt="",  # O3 doesn't use system prompts
                 user_content=combined_prompt,
-                reasoning_effort="high"  # Use high reasoning for complex tasks
+                reasoning_effort=reasoning_effort  # Use configured reasoning effort
             )
         else:
             # For other models, use standard parameters

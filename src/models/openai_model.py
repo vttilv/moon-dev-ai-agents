@@ -14,56 +14,90 @@ class OpenAIModel(BaseModel):
         "o3-mini": {
             "description": "Fast reasoning model with problem-solving capabilities",
             "input_price": "$1.10/1m tokens",
-            "output_price": "$4.40/1m tokens"
+            "output_price": "$4.40/1m tokens",
+            "supports_reasoning_effort": True
         },
         "o1": {
             "description": "Latest O1 model with reasoning capabilities",
             "input_price": "$0.01/1K tokens",
-            "output_price": "$0.03/1K tokens"
+            "output_price": "$0.03/1K tokens",
+            "supports_reasoning_effort": False
         },
         "o1-mini": {
             "description": "Smaller O1 model with reasoning capabilities",
             "input_price": "$0.005/1K tokens",
-            "output_price": "$0.015/1K tokens"
+            "output_price": "$0.015/1K tokens",
+            "supports_reasoning_effort": False
         },
-        "gpt-4-turbo-preview": "Most capable GPT-4 model",
-        "gpt-4": "Standard GPT-4 model",
-        "gpt-3.5-turbo": "Fast and efficient GPT-3.5"
+        "gpt-4o": {
+            "description": "Advanced GPT-4 Optimized model",
+            "input_price": "$0.01/1K tokens",
+            "output_price": "$0.03/1K tokens",
+            "supports_reasoning_effort": False
+        },
+        "gpt-4o-mini": {
+            "description": "Efficient GPT-4 Optimized mini model",
+            "input_price": "$0.005/1K tokens",
+            "output_price": "$0.015/1K tokens",
+            "supports_reasoning_effort": False
+        }
     }
     
-    def __init__(self, api_key: str, model_name: str = "gpt-3.5-turbo", **kwargs):
+    def __init__(self, api_key: str, model_name: str = "o1-mini", reasoning_effort: str = "medium", **kwargs):
         self.model_name = model_name
+        self.reasoning_effort = reasoning_effort
         super().__init__(api_key, **kwargs)
     
     def initialize_client(self, **kwargs) -> None:
         """Initialize the OpenAI client"""
         try:
             self.client = OpenAI(api_key=self.api_key)
-            cprint(f"✨ Initialized OpenAI model: {self.model_name}", "green")
+            cprint(f"✨ Moon Dev's magic initialized OpenAI model: {self.model_name} 🌟", "green")
+            if self._supports_reasoning_effort():
+                cprint(f"🧠 Reasoning effort set to: {self.reasoning_effort}", "cyan")
         except Exception as e:
             cprint(f"❌ Failed to initialize OpenAI model: {str(e)}", "red")
             self.client = None
     
+    def _supports_reasoning_effort(self) -> bool:
+        """Check if the current model supports reasoning effort"""
+        model_info = self.AVAILABLE_MODELS.get(self.model_name, {})
+        return isinstance(model_info, dict) and model_info.get('supports_reasoning_effort', False)
+
+    def _prepare_model_kwargs(self, **kwargs):
+        """Prepare model-specific kwargs"""
+        model_kwargs = kwargs.copy()
+        
+        if self._supports_reasoning_effort():
+            cprint("🚀 Moon Dev's O3 model powering up with reasoning capabilities! 🌙", "cyan")
+            model_kwargs["reasoning_effort"] = self.reasoning_effort
+            # Remove unsupported parameters for O3
+            model_kwargs.pop('max_tokens', None)
+            model_kwargs.pop('temperature', None)
+        elif self.model_name.startswith('o1'):
+            # Handle O1 specific parameters
+            if 'max_tokens' in model_kwargs:
+                model_kwargs['max_completion_tokens'] = model_kwargs.pop('max_tokens')
+            model_kwargs.pop('temperature', None)
+            model_kwargs.pop('reasoning_effort', None)
+        else:
+            # Remove O3 specific parameters for other models
+            model_kwargs.pop('reasoning_effort', None)
+            
+        return model_kwargs
+
     def generate_response(self, system_prompt, user_content, **kwargs):
         """Generate a response using the OpenAI model"""
         try:
             # Special handling for O3 models
             if self.model_name.startswith('o3'):
-                cprint("🧠 Using O3 model with reasoning capabilities...", "cyan")
+                cprint("🧠 Using Moon Dev's O3 model with reasoning capabilities...", "cyan")
                 messages = [
                     {
                         "role": "user",
                         "content": user_content
                     }
                 ]
-                
-                # Add reasoning effort for O3 models
-                kwargs["reasoning_effort"] = kwargs.get("reasoning_effort", "medium")
-                
-                # Remove unsupported parameters for O3
-                kwargs.pop('max_tokens', None)
-                kwargs.pop('temperature', None)
-                
             # Special handling for O1 models
             elif self.model_name.startswith('o1'):
                 messages = [
@@ -72,12 +106,6 @@ class OpenAIModel(BaseModel):
                         "content": f"Instructions: {system_prompt}\n\nInput: {user_content}"
                     }
                 ]
-                
-                # Remove unsupported parameters for O1
-                if 'max_tokens' in kwargs:
-                    kwargs['max_completion_tokens'] = kwargs.pop('max_tokens')
-                kwargs.pop('temperature', None)
-                
             # Standard handling for other models
             else:
                 messages = [
@@ -93,11 +121,14 @@ class OpenAIModel(BaseModel):
             
             cprint(f"🤔 Moon Dev's {self.model_name} is thinking...", "yellow")
             
+            # Prepare model-specific kwargs
+            model_kwargs = self._prepare_model_kwargs(**kwargs)
+            
             # Create completion with appropriate parameters
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
-                **kwargs
+                **model_kwargs
             )
             
             return response.choices[0].message

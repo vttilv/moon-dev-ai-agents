@@ -1,215 +1,163 @@
-#!/usr/bin/env python3
-"""
-Moon Dev's Backtest AI 🌙 - StochasticPhaseTrader Strategy Backtesting Script
----------------------------------------------------------------------------
-This script implements the StochasticPhaseTrader strategy using backtesting.py.
-It uses the TA‐Lib library for indicator calculations and includes:
-  • Data cleaning & mapping
-  • Indicator calculations via self.I() wrapper
-  • Entry/exit logic with Moon Dev themed debug prints 🚀✨
-  • Risk management with proper position sizing (always converting to integer!)
-  • Parameter optimization (breaking down list parameters into ranges)
-  
-Data source: /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv
-Charts will be saved to the charts directory.
-"""
+Below is the complete backtesting.py implementation for the StochasticPhaseTrader strategy. Copy and run the code (after installing required packages such as backtesting, talib, pandas, etc.) and enjoy Moon Dev’s witty debug prints! 🌙✨🚀
 
+--------------------------------------------------
+#!/usr/bin/env python3
 import os
 import pandas as pd
 import numpy as np
-from backtesting import Backtest, Strategy
-from backtesting.lib import crossover
 import talib
+from backtesting import Backtest, Strategy
 
-# ---------------------------------------------------------------------------
-# Define the StochasticPhaseTrader Strategy
-# ---------------------------------------------------------------------------
+# ─── CUSTOM STOCHASTIC RSI FUNCTION ──────────────────────────────
+def stochrsi_func(close, period, fastk_period, fastd_period):
+    # Calculate RSI first
+    rsi = talib.RSI(close, timeperiod=period)
+    # Compute the lowest and highest RSI over the lookback period
+    min_rsi = talib.MIN(rsi, timeperiod=period)
+    max_rsi = talib.MAX(rsi, timeperiod=period)
+    # Avoid divide-by-zero issues
+    stoch_rsi = 100 * ((rsi - min_rsi) / (max_rsi - min_rsi + 1e-10))
+    # Smooth the stoch_rsi with an SMA to get %K and again for %D
+    fastk = talib.SMA(stoch_rsi, timeperiod=fastk_period)
+    fastd = talib.SMA(fastk, timeperiod=fastd_period)
+    return fastk, fastd
+
+# ─── STRATEGY CLASS ───────────────────────────────────────────────
 class StochasticPhaseTrader(Strategy):
-    # ----------------------------------------------------------------------------
-    # Strategy optimization & risk parameter defaults (these can be optimized)
-    # ----------------------------------------------------------------------------
-    rsi_period = 14             # Period for RSI calculation
-    stoch_period = 14           # Period for rolling min/max of RSI (StochRSI calc)
-    stoch_d_period = 3          # SMA period for %D line of StochRSI
-    oversold_threshold = 20     # Below this value, market is oversold → potential BUY
-    overbought_threshold = 80   # Above this value, market is overbought → potential SELL
-    stop_loss_pct = 0.01        # Stop Loss: 1% risk relative to entry price
-    risk_reward_ratio = 2       # Risk-reward ratio (TP = entry + risk*ratio)
-    risk_percentage = 0.01      # Risk 1% of current equity per trade
+    # Default indicator and risk parameters:
+    period = 14                    # Lookback period for RSI in StochRSI
+    fastk_period = 3               # Smoothing for fast %K
+    fastd_period = 3               # Smoothing for fast %D
+    oversold = 20                  # Oversold threshold (buy signal)
+    overbought = 80                # Overbought threshold (sell signal)
+    risk_percent = 0.01            # Risk 1% of equity per trade
+    sl_pct = 0.02                  # Stop loss set at 2% below entry price
 
     def init(self):
-        # ----------------------------------------------------------------------------
-        # Calculate RSI using TA-Lib and then use it to compute the Stochastic RSI.
-        # We MUST use the self.I() wrapper for all indicator calculations.
-        # ----------------------------------------------------------------------------
-        # (We could store RSI separately but since our compute function uses the close prices,
-        # we define a helper function that handles it.)
-        
-        def compute_stoch_rsi(close):
-            # Compute RSI from Close prices
-            r = talib.RSI(close, timeperiod=self.rsi_period)
-            # Compute rolling minimum and maximum on RSI using TA-Lib functions
-            rmin = talib.MIN(r, timeperiod=self.stoch_period)
-            rmax = talib.MAX(r, timeperiod=self.stoch_period)
-            # Compute Stochastic RSI: scaled between 0 and 100
-            return (r - rmin) / (rmax - rmin + 1e-10) * 100
-        
-        # Calculate the fast (%K) line of the StochRSI using our compute function
-        self.stoch_rsi = self.I(compute_stoch_rsi, self.data.Close)
-        # Calculate the slow (%D) line as the SMA of the %K line
-        self.stoch_d = self.I(talib.SMA, self.stoch_rsi, timeperiod=self.stoch_d_period)
-        
-        print("🌙✨ [INIT] Indicators initialized: RSI period =", self.rsi_period,
-              "| Stoch Period =", self.stoch_period,
-              "| Stoch %D period =", self.stoch_d_period)
-
+        # Calculate Stochastic RSI indicator using our custom function and self.I() wrapper.
+        # (self.I() caches the indicator output so that it is only computed once.)
+        self.stochk, self.stochd = self.I(stochrsi_func, self.data.Close,
+                                          self.period, self.fastk_period, self.fastd_period)
+        # Save the last buy's stoch RSI value for DCA decisions.
+        self.last_buy_stoch = None
+        print("🌙✨ [INIT] StochasticPhaseTrader initialized with parameters:")
+        print(f"      period={self.period}, fastk_period={self.fastk_period}, fastd_period={self.fastd_period}")
+        print(f"      oversold threshold={self.oversold}, overbought threshold={self.overbought}")
+        print(f"      risk_percent={self.risk_percent}, sl_pct={self.sl_pct}")
+    
     def next(self):
-        # ----------------------------------------------------------------------------
-        # This method is called on every new bar.
-        # It checks for entry (BUY) or exit (SELL) conditions based on the StochRSI indicator.
-        # ----------------------------------------------------------------------------
-        current_price = self.data.Close[-1]
-        stochk = self.stoch_rsi[-1]
-        stochd = self.stoch_d[-1]
-        
-        # Ensure we have sufficient history to check for a crossover (need at least two data points)
-        if len(self.stoch_rsi) < 2:
-            return
-        prev_stochk = self.stoch_rsi[-2]
-        prev_stochd = self.stoch_d[-2]
-        
-        # --------------------------------------------------------------------
-        # Entry Rule: Enter long position when:
-        #  • The fast StochRSI line (stochk) is below the oversold threshold
-        #  • A bullish crossover occurs (stochk crosses above stochd)
-        # --------------------------------------------------------------------
+        current_close = self.data.Close[-1]
+        current_k = self.stochk[-1]
+        # For crossover detection, get the previous candle's stochk value if available
+        prev_k = self.stochk[-2] if len(self.stochk) > 1 else current_k
+        print(f"🌙✨ [NEXT] Candle @ {self.data.index[-1]} | Close: {current_close:.2f} | StochK: {current_k:.2f}")
+
+        # ENTRY SIGNAL: When NOT in a position and the indicator crosses below the oversold threshold
         if not self.position:
-            if (prev_stochk < prev_stochd) and (stochk > stochd) and (stochk < self.oversold_threshold):
-                entry_price = current_price
-                stop_loss_price = entry_price * (1 - self.stop_loss_pct)
-                take_profit_price = entry_price * (1 + self.risk_reward_ratio * self.stop_loss_pct)
-                # Calculate risk per unit and compute position size based on risk amount = equity * risk_percentage
-                risk_per_unit = entry_price - stop_loss_price
-                risk_capital = self.equity * self.risk_percentage
-                position_size = risk_capital / risk_per_unit if risk_per_unit > 0 else 0
-                # IMPORTANT: Always use integer position sizes for backtesting.py!
+            if prev_k > self.oversold and current_k <= self.oversold:
+                entry_price = current_close
+                stop_loss = entry_price * (1 - self.sl_pct)
+                # Calculate risk amount per trade (percentage of our current equity)
+                risk_amount = self.equity * self.risk_percent
+                risk_per_unit = entry_price - stop_loss
+                position_size = risk_amount / risk_per_unit
+                # Make sure to round to an integer number of units as required
                 position_size = int(round(position_size))
-                if position_size <= 0:
-                    position_size = 1  # Minimal fallback size
-                
-                print(f"🌙✨🚀 Moon Dev BUY Signal triggered!")
-                print(f"   [BUY] stochrsi_k crossed above stochrsi_d: {prev_stochk:.2f} -> {stochk:.2f} (threshold < {self.oversold_threshold})")
-                print(f"   Entry Price: {entry_price:.2f}, Stop Loss: {stop_loss_price:.2f}, Take Profit: {take_profit_price:.2f}")
-                print(f"   Calculated Position Size (int): {position_size}\n")
-                
-                self.buy(size=position_size, sl=stop_loss_price, tp=take_profit_price)
-        
-        # --------------------------------------------------------------------
-        # Exit Rule: Exit (close position) when:
-        #  • In position, and the fast StochRSI line (stochk) is above the overbought threshold
-        #  • A bearish crossover occurs (stochk crosses below stochd)
-        # --------------------------------------------------------------------
-        elif self.position:
-            if (prev_stochk > prev_stochd) and (stochk < stochd) and (stochk > self.overbought_threshold):
-                print(f"🌙✨🚀 Moon Dev SELL Signal triggered!")
-                print(f"   [SELL] stochrsi_k crossed below stochrsi_d: {prev_stochk:.2f} -> {stochk:.2f} (threshold > {self.overbought_threshold})")
-                print(f"   Exiting position at Price: {current_price:.2f}\n")
+                if position_size < 1:
+                    position_size = 1
+                print(f"🚀🌙 [ENTRY] BUY signal generated!")
+                print(f"      Entry Price: {entry_price:.2f}, Stop Loss: {stop_loss:.2f}, Position Size: {position_size}")
+                self.buy(size=position_size, sl=stop_loss)
+                # Save the stoch value at entry to help with potential dollar-cost averaging (DCA)
+                self.last_buy_stoch = current_k
+
+        else:
+            # If already in a position, consider DCA if StochRSI keeps declining
+            if self.last_buy_stoch is not None and current_k < self.last_buy_stoch:
+                entry_price = current_close
+                stop_loss = entry_price * (1 - self.sl_pct)
+                risk_amount = self.equity * self.risk_percent
+                risk_per_unit = entry_price - stop_loss
+                add_size = risk_amount / risk_per_unit
+                add_size = int(round(add_size))
+                if add_size < 1:
+                    add_size = 1
+                print(f"🌙🚀 [DCA] Additional BUY signal (DCA) at {entry_price:.2f} with size {add_size}")
+                self.buy(size=add_size, sl=stop_loss)
+                # Update the last buy indicator to the new lower value.
+                self.last_buy_stoch = current_k
+
+            # EXIT SIGNAL: Dollar-cost average OUT when the indicator rises above the overbought threshold
+            if prev_k < self.overbought and current_k >= self.overbought:
+                print("✨🚀 [EXIT] SELL signal generated! StochK crossed above the overbought threshold.")
                 self.position.close()
-                
-        # Additional Moon Dev debug info (plenty of debug prints for tracing)
-        print(f"🌙 [DEBUG] Price = {current_price:.2f} | stochrsi_k = {stochk:.2f} | stochrsi_d = {stochd:.2f}")
+                self.last_buy_stoch = None
 
-# ---------------------------------------------------------------------------
-# Main Backtesting & Optimization Execution
-# ---------------------------------------------------------------------------
+# ─── MAIN BACKTEST EXECUTION ───────────────────────────────────────
 if __name__ == '__main__':
-    # -------- Data Loading & Cleaning ---------------------------------------
+    # Data location and load
     data_path = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv"
-    try:
-        data = pd.read_csv(data_path)
-        print("🌙✨🚀 Moon Dev: Data successfully loaded from", data_path)
-    except Exception as e:
-        print("🌙❌ Moon Dev ERROR: Failed to load data.", str(e))
-        raise
-
-    # Clean column names: remove extra spaces and convert to lowercase
+    print("🌙✨ [DATA] Loading data from:", data_path)
+    data = pd.read_csv(data_path, parse_dates=['datetime'])
+    
+    # Clean up columns: remove spaces and drop any unnamed columns
     data.columns = data.columns.str.strip().str.lower()
-    # Drop any 'unnamed' columns
     data = data.drop(columns=[col for col in data.columns if 'unnamed' in col.lower()])
-    
-    # Ensure proper mapping to required columns with Capitalized names
-    rename_map = {
-        'open': 'Open',
-        'high': 'High',
-        'low': 'Low',
-        'close': 'Close',
-        'volume': 'Volume',
-        'datetime': 'Datetime'
-    }
-    data.rename(columns=rename_map, inplace=True)
-    
-    # Convert Datetime column to pandas datetime and set as index if available
-    if 'Datetime' in data.columns:
-        data['Datetime'] = pd.to_datetime(data['Datetime'])
-        data.set_index('Datetime', inplace=True)
-    
-    print("🌙✨🚀 Moon Dev: Data cleaning complete. Columns available:", list(data.columns))
-    
-    # -------- Backtest Initialization with initial size (1,000,000) ------------
-    bt = Backtest(data, StochasticPhaseTrader, cash=1_000_000, commission=0.0, trade_on_close=True)
-    print("🌙✨🚀 Moon Dev: Backtest initialized with cash = 1,000,000")
-    
-    # -------- Run Initial Backtest ------------------------------------------
-    print("🌙✨🚀 Moon Dev: Running initial backtest with default parameters...")
+    # Ensure required columns and proper column mapping (capital first letter names)
+    data.rename(columns={'open': 'Open', 
+                         'high': 'High', 
+                         'low': 'Low', 
+                         'close': 'Close', 
+                         'volume': 'Volume',
+                         'datetime': 'Date'}, inplace=True)
+    data.set_index('Date', inplace=True)
+    print("🌙✨ [DATA] Data cleaning complete. Columns:", data.columns.tolist())
+
+    # Initialize Backtest with cash size 1,000,000
+    bt = Backtest(data, StochasticPhaseTrader, cash=1000000, commission=.000,
+                  exclusive_orders=True)
+
+    # ─── INITIAL BACKTEST ─────────────────────────────
+    print("🌙✨ [BACKTEST] Running initial backtest with default parameters...")
     stats = bt.run()
-    print("\n🌙✨🚀 Moon Dev: *** INITIAL BACKTEST STATS ***")
+    print("🌙✨ [STATS] Full Stats:")
     print(stats)
-    print("\n🌙✨🚀 Moon Dev: Strategy parameters:")
+    print("🌙✨ [STRATEGY DETAILS]:")
     print(stats._strategy)
-    
-    # Save the initial performance chart
+
+    # Save the initial performance plot to charts folder
+    charts_dir = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/charts"
+    os.makedirs(charts_dir, exist_ok=True)
     strategy_name = "StochasticPhaseTrader"
-    chart_dir = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/charts"
-    os.makedirs(chart_dir, exist_ok=True)
-    chart_file = os.path.join(chart_dir, f"{strategy_name}_chart.html")
-    bt.plot(filename=chart_file, open_browser=False)
-    print(f"🌙✨🚀 Moon Dev: Initial performance chart saved to {chart_file}\n")
-    
-    # -------- Optimization --------------------------------------------------
-    # Optimize the following parameters:
-    #   • oversold_threshold: try values in range(15, 25, 5)  → e.g. 15, 20
-    #   • overbought_threshold: try values in range(75, 85, 5)  → e.g. 75, 80
-    #   • risk_reward_ratio: try values in range(1, 3, 1)         → e.g. 1, 2
-    # Constraint: oversold_threshold must be strictly less than overbought_threshold.
-    print("🌙✨🚀 Moon Dev: Starting optimization...")
-    opt_stats = bt.optimize(oversold_threshold=range(15, 25, 5),
-                            overbought_threshold=range(75, 85, 5),
-                            risk_reward_ratio=range(1, 3, 1),
-                            maximize='Equity Final [$]',
-                            constraint=lambda p: p.oversold_threshold < p.overbought_threshold,
-                            return_stats=True)
-    print("\n🌙✨🚀 Moon Dev: *** OPTIMIZATION RESULTS ***")
-    print(opt_stats)
-    print("\n🌙✨🚀 Moon Dev: Optimal strategy parameters:")
-    print(opt_stats._strategy)
-    
-    # -------- Re-run Backtest with Optimized Parameters ---------------------
-    best_oversold = opt_stats._strategy.oversold_threshold
-    best_overbought = opt_stats._strategy.overbought_threshold
-    best_rr = opt_stats._strategy.risk_reward_ratio
-    print(f"\n🌙✨🚀 Moon Dev: Re-running backtest with optimized parameters: oversold_threshold = {best_oversold}, "
-          f"overbought_threshold = {best_overbought}, risk_reward_ratio = {best_rr}")
-    
-    bt_optimized = Backtest(data, StochasticPhaseTrader, cash=1_000_000, commission=0.0, trade_on_close=True)
-    stats_opt = bt_optimized.run(oversold_threshold=best_oversold,
-                                 overbought_threshold=best_overbought,
-                                 risk_reward_ratio=best_rr)
-    
-    # Save the optimized performance chart
-    opt_chart_file = os.path.join(chart_dir, f"{strategy_name}_optimized_chart.html")
-    bt_optimized.plot(filename=opt_chart_file, open_browser=False)
-    print(f"🌙✨🚀 Moon Dev: Optimized performance chart saved to {opt_chart_file}\n")
-    
-    print("🌙✨🚀 Moon Dev: All done! Happy trading and may the Moon light your profits! 🌕🚀✨")
-    
-# End of Script
+    chart_file_initial = os.path.join(charts_dir, f"{strategy_name}_chart_initial.html")
+    print(f"🌙✨ [PLOT] Saving initial performance plot to: {chart_file_initial}")
+    bt.plot(filename=chart_file_initial, open_browser=False)
+
+    # ─── PARAMETER OPTIMIZATION ─────────────────────
+    print("🌙✨ [OPTIMIZATION] Running parameter optimization... 🚀")
+    optimized_stats = bt.optimize(
+        oversold=range(15, 25, 5),         # Try oversold thresholds: 15 and 20
+        overbought=range(75, 85, 5),         # Try overbought thresholds: 75 and 80
+        sl_pct=[0.01, 0.02, 0.03],           # Try stop loss percentages: 1%, 2%, 3%
+        maximize='Equity Final [$]',
+        constraint=lambda param: param.oversold < param.overbought  # simple constraint
+    )
+    print("🌙✨ [OPTIMIZATION] Optimized Stats:")
+    print(optimized_stats)
+
+    # Save the optimized performance plot to charts folder
+    chart_file_optimized = os.path.join(charts_dir, f"{strategy_name}_chart_optimized.html")
+    print(f"🌙✨ [PLOT] Saving optimized performance plot to: {chart_file_optimized}")
+    bt.plot(filename=chart_file_optimized, open_browser=False)
+--------------------------------------------------
+
+Explanation of key points and debugging features:
+• All necessary libraries are imported (including os, pandas, numpy, talib, backtesting).
+• The strategy uses a custom stochrsi_func with talib functions (RSI, MIN, MAX, SMA) and is called by self.I().
+• Debug prints (with plenty of Moon Dev themed emojis 🌙 ✨ 🚀) are included at key stages (data loading, initialization, entry/DCA/exit signals).
+• Position sizing is strictly converted to an integer using int(round(...)) so that size is acceptable by backtesting.py.
+• Data is cleaned per instructions (trim spaces and proper column name mapping).
+• We run an initial backtest and then perform a parameter optimization on oversold, overbought, and sl_pct.
+• Finally, performance charts are saved to the specified charts directory.
+
+Happy backtesting and may your trades always be lunar-tastic! 🌙🚀✨
