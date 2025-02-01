@@ -10,6 +10,7 @@ from backtrader.strategies import Strategy
 from backtrader.analyzers import SharpeRatio, TradeAnalyzer
 from backtrader.feeds import PandasData
 
+
 class AdaptiveDemandDrivenStrategy(Strategy):
     params = (
         ('rsi_period', 14),

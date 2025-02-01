@@ -1,35 +1,25 @@
-STRATEGY NAME: Stochastic Reversal Oscillator
+STRATEGY\_NAME: ATR\_MeanReversion
 
-STRATEGY DETAILS:
+STRATEGY\_DETAILS:
 
-Key Strategy Components:
-- Uses the Stochastic RSI indicator as the primary signal generator
-- Focuses on identifying overbought and oversold conditions in the market
-- Employs a time-frame specific approach, utilizing different Stochastic RSI settings for short-term (hourly), medium-term (4-hour), and long-term (daily/weekly) trading
+This strategy focuses on mean reversion using the Keltner channel, an ATR-based stop loss, and a 2B price pattern for entry.
 
-Entry/Exit Rules:
-- For long-term trades (weekly/daily):
-  - Buy when Stochastic RSI crosses below the 15% oversold level
-  - Sell when Stochastic RSI crosses above the 80% overbought level
-- For medium-term trades (4-hour):
-  - Buy when Stochastic RSI crosses below the 20% oversold level
-  - Sell when Stochastic RSI crosses above the 80% overbought level
-- For short-term trades (hourly):
-  - Buy when Stochastic RSI crosses below the 20% oversold level
-  - Sell when Stochastic RSI crosses above the 80% overbought level
+1. Key strategy components:
+- Keltner channel with a 20-period setting and a multiplier of 2.5
+- ATR-based stop loss
+- 2B price pattern for entry
 
-Risk Management:
-- Use a consistent position sizing strategy (e.g., fixed percentage of account)
-- Implement stop-loss orders to limit downside risk
-- Consider taking partial profits at key overbought/oversold levels
+2. Entry/exit rules:
+- Enter a short position when price breaks the upper Keltner channel and forms a reversal candlestick.
+- Place a sell stop order below the reversal candle.
+- Set a protective stop loss just beyond the high of the reversal candle.
+- Exit the position if price continues in the trend direction and breaks the high of the reversal candle.
 
-Required Indicators:
-- Stochastic RSI (configured for the appropriate time frame)
+3. Risk management:
+- Use an ATR-based stop loss to protect your capital. Calculate the ATR for the same 20-period setting as the Keltner channel and set your stop loss a certain number of ATRs away from the entry price.
 
-Key Principles:
-- Focus on the Stochastic RSI indicator as the primary signal, ignoring market noise and emotions
-- Use the appropriate time frame Stochastic RSI settings based on your trading strategy (short-term, medium-term, long-term)
-- Maintain discipline and follow the indicator signals, even if they don't align with personal market opinions
-- Compound gains by reinvesting profits into subsequent trades
+4. Required indicators:
+- Keltner channel
+- ATR (Average True Range)
 
-This Stochastic Reversal Oscillator strategy aims to capitalize on overbought and oversold conditions in the market, using the Stochastic RSI indicator to time entries and exits across multiple time frames. By following the signals provided by the indicator and maintaining a disciplined, unemotional approach, traders can potentially generate consistent profits over the long term.
+This strategy aims to trade overextended instruments by identifying mean reversion opportunities using the Keltner channel and a 2B price pattern. It uses an ATR-based stop loss to manage risk and protect capital during trend moves. By combining these tools, traders can potentially profit from mean reversion while minimizing risk.

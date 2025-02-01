@@ -115,3 +115,4 @@ src/frontend
 
 # Also add the directory in case it doesn't exist yet
 src/data/chat_agent/*.txt
+src/data/code_runner/screenshots
