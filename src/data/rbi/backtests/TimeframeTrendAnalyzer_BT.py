@@ -1,227 +1,282 @@
-Below is the complete Python script for your TimeframeTrendAnalyzer strategy. This implementation:
-
-• Imports all required modules (including os, pandas, numpy, talib, and backtesting.py)  
-• Loads and cleans the data (stripping spaces, dropping any “unnamed” columns, converting the datetime column, and renaming columns to “Open”, “High”, “Low”, “Close”, “Volume”)  
-• Computes multi‐timeframe “candles” (1‑hour, 4‑hour, daily, weekly) in the strategy’s init() method  
-• Defines entry rules based on whether all higher timeframes agree and the 15‑minute close breaks the last complete 1‑hour high (long) or low (short)  
-• Calculates the stop loss and take profit based on the given risk–reward ratio and then sizes the order based on a fixed risk percentage of equity (using int(round(...)) so only whole numbers are used)  
-• Prints plenty of Moon Dev debug messages with emojis  
-• Runs an initial backtest (cash=1,000,000) before executing a parameter optimization (optimizing “risk_reward”)  
-• Saves both charts (initial and optimized) to the charts directory
-
-Just copy and run the script. Have fun backtesting and good luck – Moon Dev style! 🚀🌙✨
-
-------------------------------------------------------------
 #!/usr/bin/env python3
+"""
+Moon Dev's Backtest AI 🌙 – TimeframeTrendAnalyzer Strategy
+By: Moon Dev
+This script implements a backtest for the TimeframeTrendAnalyzer strategy,
+which uses multi-timeframe market structure analysis and price‐action breakout
+to identify potential entry points. The strategy works as follows:
+
+• Clean the data (remove spaces, drop unnamed columns, and remap column names)
+• Resample the 15m data into Weekly, Daily, 4H, 1H and 50-minute bars.
+• Check that the weekly and daily market structures are bullish.
+• Determine a clear trend on the 4H timeframe (or fallback to 1H if 4H is unclear).
+• Wait for a breakout on the 50-minute chart:
+    – For a bullish trend: a 50-min close above the previous 50-min high.
+    – For a bearish trend: a 50-min close below the previous 50-min low.
+• When a breakout is confirmed, calculate risk using the previous 50-min bar’s low/high
+  and enter a trade with stop loss and take profit (aiming for a risk–reward ratio).
+• The position size is calculated with proper integer rounding.
+
+Risk management and parameter optimization settings are built in.
+Plenty of Moon Dev-themed debug prints are included for easy tracing! 🌙✨🚀
+"""
+
 import os
 import pandas as pd
 import numpy as np
 import talib
 from backtesting import Backtest, Strategy
 
-# Define the TimeframeTrendAnalyzer strategy
+# ============================================================================
+# STRATEGY CLASS
+# ============================================================================
+
 class TimeframeTrendAnalyzer(Strategy):
-    # ----- Optimization parameters -----
-    risk_reward = 2.0       # target risk-reward ratio (can be optimized over a range, e.g. 2,3,4)
-    risk_pct    = 0.01      # risk percentage per trade
+    # Optimization parameters:
+    # risk_pct_percent: risk per trade in percentage points (e.g., 1 means 1%)
+    # risk_reward: risk-reward ratio (target multiples of risk)
+    risk_pct_percent = 1      # Default: 1% risk per trade
+    risk_reward = 2.0         # Default risk-reward ratio
 
     def init(self):
-        # • Compute multi-timeframe aggregated candles from the 15-min data.
-        #   (Our data index is the datetime so we can use resample.)
-        self.mtf_1h = self.data.resample('1H').agg({
-            'Open':  'first',
-            'High':  'max',
-            'Low':   'min',
-            'Close': 'last',
-            'Volume':'sum'
-        }).dropna()
+        print("🌙✨ [INIT] Initializing TimeframeTrendAnalyzer strategy...")
+        # Resample the original 15-minute OHLCV data into higher timeframes.
+        # Using backtesting.py's self.data (a pandas DataFrame) for indicator calculations.
+        self.weekly_data = self.data.resample('W', closed='right', label='right').agg({
+            'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+        self.daily_data = self.data.resample('D', closed='right', label='right').agg({
+            'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+        self.fourhour_data = self.data.resample('4H', closed='right', label='right').agg({
+            'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+        self.onehour_data = self.data.resample('1H', closed='right', label='right').agg({
+            'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+        self.fiftymin_data = self.data.resample('50T', closed='right', label='right').agg({
+            'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+        print("🌙✨ [INIT] Aggregated weekly, daily, 4H, 1H, and 50min data computed! 🚀")
 
-        self.mtf_4h = self.data.resample('4H').agg({
-            'Open':  'first',
-            'High':  'max',
-            'Low':   'min',
-            'Close': 'last',
-            'Volume':'sum'
-        }).dropna()
+    def get_last_bar(self, df, current_time):
+        "Helper: return the last bar in df with timestamp <= current_time."
+        try:
+            subset = df.loc[:current_time]
+            if subset.empty:
+                return None
+            return subset.iloc[-1]
+        except Exception as e:
+            print("🌙🚀 [DEBUG] Error in get_last_bar:", e)
+            return None
 
-        self.mtf_daily = self.data.resample('D').agg({
-            'Open':  'first',
-            'High':  'max',
-            'Low':   'min',
-            'Close': 'last',
-            'Volume':'sum'
-        }).dropna()
+    def get_last_two_bars(self, df, current_time):
+        "Helper: return the last two bars from df with timestamp <= current_time."
+        try:
+            subset = df.loc[:current_time]
+            if len(subset) < 2:
+                return None, None
+            return subset.iloc[-2], subset.iloc[-1]
+        except Exception as e:
+            print("🌙🚀 [DEBUG] Error in get_last_two_bars:", e)
+            return None, None
 
-        self.mtf_weekly = self.data.resample('W').agg({
-            'Open':  'first',
-            'High':  'max',
-            'Low':   'min',
-            'Close': 'last',
-            'Volume':'sum'
-        }).dropna()
+    def determine_trend(self, df, current_time):
+        """
+        Determine price action trend by comparing the last two bars:
+          • Bullish if last high & low are higher than previous.
+          • Bearish if last high & low are lower than previous.
+          • Otherwise, sideways.
+        """
+        prev_bar, last_bar = self.get_last_two_bars(df, current_time)
+        if prev_bar is None or last_bar is None:
+            return None
+        if (last_bar['High'] > prev_bar['High']) and (last_bar['Low'] > prev_bar['Low']):
+            trend = "bullish"
+        elif (last_bar['High'] < prev_bar['High']) and (last_bar['Low'] < prev_bar['Low']):
+            trend = "bearish"
+        else:
+            trend = "sideways"
+        print("🌙✨ [DEBUG] Trend determined: {0} | Prev High: {1}, Last High: {2}".format(
+            trend, prev_bar['High'], last_bar['High']))
+        return trend
 
-        print("🌙✨ [Init] Multi-timeframe (1H, 4H, Daily, Weekly) data computed. Ready to scour the trends! 🚀")
-        self.breakeven_adjusted = False  # flag for break-even adjustment
-        self.entry_sl = None            # store the stop loss level at entry
+    def get_fiftymin_breakout(self, current_time, direction):
+        """
+        Check for a breakout on the 50-minute timeframe:
+          • For LONG: breakout if current 50-min close > previous 50-min high.
+          • For SHORT: breakout if current 50-min close < previous 50-min low.
+        """
+        prev_bar, last_bar = self.get_last_two_bars(self.fiftymin_data, current_time)
+        if prev_bar is None or last_bar is None:
+            return False
+        if direction == "bullish":
+            if last_bar['Close'] > prev_bar['High']:
+                print("🌙🚀 [DEBUG] 50min breakout detected for LONG! Prev High: {0}, Last Close: {1}".format(
+                    prev_bar['High'], last_bar['Close']))
+                return True
+        elif direction == "bearish":
+            if last_bar['Close'] < prev_bar['Low']:
+                print("🌙🚀 [DEBUG] 50min breakout detected for SHORT! Prev Low: {0}, Last Close: {1}".format(
+                    prev_bar['Low'], last_bar['Close']))
+                return True
+        return False
 
     def next(self):
-        # Get the current bar’s timestamp and price
+        "Main logic executed on each new bar."
         current_time = self.data.index[-1]
-        current_price = self.data.Close[-1]
+        print("🌙✨ [NEXT] Processing new bar at:", current_time)
 
-        # -------------------------------
-        # Retrieve the most recent completed candle for each timeframe
-        # -------------------------------
-        mtf_1h_all = self.mtf_1h[self.mtf_1h.index <= current_time]
-        if len(mtf_1h_all) == 0:
+        # Only look to enter a new trade if no position is open.
+        if self.position:
             return
-        last_1h = mtf_1h_all.iloc[-1]
 
-        mtf_4h_all = self.mtf_4h[self.mtf_4h.index <= current_time]
-        if len(mtf_4h_all) == 0:
+        # Step 1: Ensure weekly structure is bullish.
+        weekly_trend = self.determine_trend(self.weekly_data, current_time)
+        if weekly_trend != "bullish":
+            print("🌙😴 [DEBUG] Weekly trend not bullish. Skipping trade entry.")
             return
-        last_4h = mtf_4h_all.iloc[-1]
 
-        mtf_daily_all = self.mtf_daily[self.mtf_daily.index <= current_time]
-        if len(mtf_daily_all) == 0:
+        # Step 2: Daily structure must also be bullish.
+        daily_trend = self.determine_trend(self.daily_data, current_time)
+        if daily_trend != "bullish":
+            print("🌙😴 [DEBUG] Daily trend not bullish. Skipping trade entry.")
             return
-        last_daily = mtf_daily_all.iloc[-1]
 
-        mtf_weekly_all = self.mtf_weekly[self.mtf_weekly.index <= current_time]
-        if len(mtf_weekly_all) == 0:
-            return
-        last_weekly = mtf_weekly_all.iloc[-1]
-
-        # -------------------------------
-        # Determine trends (using the simple idea: candle bullish if Close > Open)
-        # -------------------------------
-        trend_1h    = 'up' if last_1h.Close > last_1h.Open else 'down'
-        trend_4h    = 'up' if last_4h.Close > last_4h.Open else 'down'
-        trend_daily = 'up' if last_daily.Close > last_daily.Open else 'down'
-        trend_weekly= 'up' if last_weekly.Close > last_weekly.Open else 'down'
-        print(f"🌙✨ [Debug] Time: {current_time}, 1H: {trend_1h}, 4H: {trend_4h}, Daily: {trend_daily}, Weekly: {trend_weekly}. 🚀")
-
-        # Only trade if the higher timeframes agree.
-        if (trend_daily == trend_4h == trend_weekly):
-            overall_trend = trend_daily
-            print(f"🌙✨ [Signal] Overall trend is {overall_trend.upper()} based on Daily/4H/Weekly. Let’s ride the wave!")
+        # Step 3: Check 4H trend; if sideways then try 1H.
+        fourhr_trend = self.determine_trend(self.fourhour_data, current_time)
+        if fourhr_trend != "sideways" and fourhr_trend is not None:
+            trend_direction = fourhr_trend
+            print("🌙✨ [DEBUG] 4H trend is clear:", trend_direction)
         else:
-            print("🌙✨ [Signal] Conflicting higher timeframe trends… No trade this round!")
-            return  # Exit if higher timeframe trends are not in agreement
+            onehr_trend = self.determine_trend(self.onehour_data, current_time)
+            if onehr_trend != "sideways" and onehr_trend is not None:
+                trend_direction = onehr_trend
+                print("🌙✨ [DEBUG] 4H trend sideways. Using 1H trend:", trend_direction)
+            else:
+                print("🌙😴 [DEBUG] Both 4H and 1H trends unclear. No trade entry.")
+                return
 
-        # -------------------------------
-        # ----- Entry Logic -----
-        # If no open position, we look for a trade signal based on the 1H structure:
-        #   > For LONG: if overall trend is UP and current price > last 1H High.
-        #   > For SHORT: if overall trend is DOWN and current price < last 1H Low.
-        # -------------------------------
-        if not self.position:
-            # LONG ENTRY
-            if overall_trend == 'up' and current_price > last_1h.High:
-                sl = last_1h.Low  # Stop loss just below the last 1H low
-                risk = current_price - sl
-                if risk <= 0:
-                    print("🌙✨ [Warning] Computed risk for LONG is <= 0. Skipping trade. 🚀")
-                    return
-                tp = current_price + self.risk_reward * risk  # take profit set for at least 1:2 risk-reward
-                risk_amount = self.equity * self.risk_pct    # amount of cash risked this trade
-                position_size = risk_amount / risk           # number of units to risk
-                position_size = int(round(position_size))     # ensure integer units!
-                print(f"🌙✨ [Entry LONG] Price: {current_price:.2f}, SL: {sl:.2f}, TP: {tp:.2f}, Risk: {risk:.2f}, Units: {position_size}. 🚀")
-                self.buy(size=position_size, sl=sl, tp=tp)
-                self.entry_sl = sl
-                self.breakeven_adjusted = False
+        # Step 4: Wait for a breakout on the 50-minute timeframe.
+        if not self.get_fiftymin_breakout(current_time, trend_direction):
+            print("🌙😴 [DEBUG] No breakout detected on 50min timeframe. Waiting...")
+            return
 
-            # SHORT ENTRY
-            elif overall_trend == 'down' and current_price < last_1h.Low:
-                sl = last_1h.High  # Stop loss just above the last 1H high
-                risk = sl - current_price
-                if risk <= 0:
-                    print("🌙✨ [Warning] Computed risk for SHORT is <= 0. Skipping trade. 🚀")
-                    return
-                tp = current_price - self.risk_reward * risk
-                risk_amount = self.equity * self.risk_pct
-                position_size = risk_amount / risk
-                position_size = int(round(position_size))
-                print(f"🌙✨ [Entry SHORT] Price: {current_price:.2f}, SL: {sl:.2f}, TP: {tp:.2f}, Risk: {risk:.2f}, Units: {position_size}. 🚀")
-                self.sell(size=position_size, sl=sl, tp=tp)
-                self.entry_sl = sl
-                self.breakeven_adjusted = False
+        # Signal confirmed – calculate entry parameters.
+        entry_price = self.data.Close[-1]
+        prev_fiftymin_bar = self.get_last_bar(self.fiftymin_data, current_time)
+        if prev_fiftymin_bar is None:
+            print("🌙🚀 [DEBUG] Previous 50min bar not found. Aborting entry.")
+            return
+
+        if trend_direction == "bullish":
+            stop_loss = prev_fiftymin_bar['Low']
+            risk = entry_price - stop_loss
+            take_profit = entry_price + self.risk_reward * risk
+            signal = "LONG"
+        elif trend_direction == "bearish":
+            stop_loss = prev_fiftymin_bar['High']
+            risk = stop_loss - entry_price
+            take_profit = entry_price - self.risk_reward * risk
+            signal = "SHORT"
         else:
-            # -------------------------------
-            # ----- Position Management -----
-            # We consider a break-even adjustment once the position is in profit.
-            # (Note: Backtesting.py does not directly support dynamic stop updates so we only print a debug message.)
-            # -------------------------------
-            if self.position.is_long:
-                if (current_price - self.position.entry_price) >= (self.position.entry_price - self.entry_sl) and not self.breakeven_adjusted:
-                    print(f"🌙✨ [Adjust] LONG BE triggered! Price is in profit. Consider moving SL to {self.position.entry_price:.2f} (break-even). 🚀")
-                    self.breakeven_adjusted = True
-            elif self.position.is_short:
-                if (self.entry_sl - self.position.entry_price) <= (self.position.entry_price - current_price) and not self.breakeven_adjusted:
-                    print(f"🌙✨ [Adjust] SHORT BE triggered! Price is in profit. Consider moving SL to {self.position.entry_price:.2f} (break-even). 🚀")
-                    self.breakeven_adjusted = True
+            print("🌙🚀 [DEBUG] Trend direction uncertain. Aborting trade.")
+            return
 
-# -------------------------------
-# Main backtesting execution
-# -------------------------------
-def main():
-    # Load data from CSV and clean up
-    data_path = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv"
-    data = pd.read_csv(data_path)
-    # Clean column names (remove spaces, to lower case)
-    data.columns = data.columns.str.strip().str.lower()
-    # Drop any unnamed columns
-    data = data.drop(columns=[col for col in data.columns if 'unnamed' in col.lower()])
-    # Map the required columns to proper case names
-    data.rename(columns={'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'}, inplace=True)
-    # Convert datetime column to datetime type and set as index (if exists)
-    if 'datetime' in data.columns:
-        data['Datetime'] = pd.to_datetime(data['datetime'])
-        data.set_index('Datetime', inplace=True)
+        if risk <= 0:
+            print("🌙🚀 [DEBUG] Invalid risk (<= 0). Aborting trade.")
+            return
 
-    print("🌙✨ [Data] Data loaded and cleaned. Here’s a peek:")
-    print(data.head())
+        # Calculate the risk amount (percentage of current equity) and derive position size.
+        risk_amount = self.equity * (self.risk_pct_percent / 100.0)
+        position_size = risk_amount / risk
+        position_size_int = int(round(position_size))
+        if position_size_int <= 0:
+            print("🌙🚀 [DEBUG] Calculated position size is zero. Aborting trade.")
+            return
 
-    # Initialize Backtest with 1,000,000 cash – our “moon mission” capital!
-    bt = Backtest(data, TimeframeTrendAnalyzer, cash=1000000, commission=0.0, trade_on_close=True)
-    print("🌙✨ [Backtest] Running initial backtest with default parameters. 🚀")
-    stats = bt.run()
-    print("🌙✨ [Stats] Full statistics:")
-    print(stats)
-    print("🌙✨ [Strategy] Strategy details:")
-    print(stats._strategy)
+        print("🌙🚀 [SIGNAL] {0} entry signal! Entry: {1:.2f}, Stop: {2:.2f}, TP: {3:.2f}, Risk: {4:.2f}, Position Size: {5}".format(
+            signal, entry_price, stop_loss, take_profit, risk, position_size_int))
 
-    # Save the initial performance plot to the charts directory
-    strategy_name = "TimeframeTrendAnalyzer"
-    chart_file = os.path.join("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/charts",
-                              f"{strategy_name}_chart.html")
-    print(f"🌙✨ [Plot] Saving initial performance chart to {chart_file}")
-    bt.plot(filename=chart_file, open_browser=False)
+        # Use backtesting.py's order functions with the critical position sizing adjustment.
+        if signal == "LONG":
+            self.buy(size=position_size_int, sl=stop_loss, tp=take_profit)
+        elif signal == "SHORT":
+            self.sell(size=position_size_int, sl=stop_loss, tp=take_profit)
 
-    # -------------------------------
-    # Parameter Optimization (for example, risk_reward from 2 to 4)
-    # -------------------------------
-    print("🌙✨ [Optimize] Starting optimization of risk_reward... 🚀")
-    optimized_stats = bt.optimize(risk_reward=range(2, 5), risk_pct=[0.01],
-                                  maximize='Equity Final [$]', constraint=lambda param: True)
-    print("🌙✨ [Optimized Stats] Optimization complete. Best parameters:")
-    print(optimized_stats)
-
-    # Save the optimized performance plot
-    optimized_chart_file = os.path.join("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/charts",
-                              f"{strategy_name}_optimized_chart.html")
-    print(f"🌙✨ [Plot] Saving optimized performance chart to {optimized_chart_file}")
-    bt.plot(filename=optimized_chart_file, open_browser=False)
+# ============================================================================
+# MAIN EXECUTION
+# ============================================================================
 
 if __name__ == '__main__':
-    main()
+    # Data path as provided.
+    data_path = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv"
+    print("🌙✨ [MAIN] Loading data from:", data_path)
+    data = pd.read_csv(data_path, parse_dates=['datetime'])
 
-------------------------------------------------------------
+    # ---------------------------
+    # DATA HANDLING & CLEANING
+    # ---------------------------
+    data.columns = data.columns.str.strip().str.lower()
+    # Drop any columns whose names contain 'unnamed'
+    unnamed_cols = [col for col in data.columns if 'unnamed' in col.lower()]
+    if unnamed_cols:
+        data = data.drop(columns=unnamed_cols)
+    # Map column names to backtesting requirements (capital first letter):
+    column_mapping = {
+        'open': 'Open',
+        'high': 'High',
+        'low': 'Low',
+        'close': 'Close',
+        'volume': 'Volume',
+        'datetime': 'datetime'
+    }
+    data = data.rename(columns=column_mapping)
+    # Set the 'datetime' column as the index.
+    data.set_index('datetime', inplace=True)
+    print("🌙✨ [MAIN] Data cleaning complete. Data head:")
+    print(data.head())
 
-Remember:
-• All indicator‐like calculations (if needed) are to be wrapped in self.I(). In this strategy we rely on multi‐timeframe aggregation and simple candle comparisons (no built-in TA signals).
-• Position size is calculated as an integer (using int(round(...))) so you won’t face floating‑point errors.
-• Debug prints are sprinkled generously with 🌙 ✨ 🚀 – just like a true Moon Dev backtest!
+    # ---------------------------
+    # INITIAL BACKTEST CONFIGURATION
+    # ---------------------------
+    initial_equity = 1000000  # As required – our starting size equals 1,000,000.
+    bt = Backtest(data, TimeframeTrendAnalyzer, cash=initial_equity, commission=0.0, exclusive_orders=True)
 
-Happy backtesting and may your trades shoot for the moon!
+    print("🌙✨ [MAIN] Running initial backtest with default parameters...")
+    stats = bt.run()
+    print("🌙✨ [RESULT] Initial Backtest Stats:")
+    print(stats)
+    print("🌙✨ [STRATEGY DETAILS] Strategy configuration:")
+    print(stats._strategy)
+
+    # ---------------------------
+    # SAVE INITIAL CHART
+    # ---------------------------
+    strategy_name = "TimeframeTrendAnalyzer"
+    chart_dir = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/charts"
+    initial_chart_file = os.path.join(chart_dir, f"{strategy_name}_chart.html")
+    bt.plot(filename=initial_chart_file, open_browser=False)
+    print("🌙🚀 [MAIN] Initial performance chart saved to:", initial_chart_file)
+
+    # ---------------------------
+    # PARAMETER OPTIMIZATION
+    # ---------------------------
+    print("🌙✨ [MAIN] Starting optimization of parameters... 🚀")
+    # Here, we optimize risk_reward and risk_pct_percent.
+    # For risk_reward, we consider values from 2 to 5 (step 1)
+    # For risk_pct_percent, we consider values 1% to 3%
+    optimized_stats = bt.optimize(
+        risk_reward=range(2, 6),              # 2, 3, 4, 5
+        risk_pct_percent=range(1, 4),           # 1%, 2%, 3%
+        maximize='Equity Final [$]',
+        constraint=lambda param: True         # (No extra constraint for simplicity)
+    )
+    print("🌙✨ [RESULT] Optimized Backtest Stats:")
+    print(optimized_stats)
+    print("🌙✨ [OPTIMIZED STRATEGY DETAILS] Strategy config:")
+    print(optimized_stats._strategy)
+
+    # ---------------------------
+    # SAVE OPTIMIZED CHART
+    # ---------------------------
+    optimized_chart_file = os.path.join(chart_dir, f"{strategy_name}_optimized_chart.html")
+    bt.plot(filename=optimized_chart_file, open_browser=False)
+    print("🌙🚀 [MAIN] Optimized performance chart saved to:", optimized_chart_file)
+
+# End of script

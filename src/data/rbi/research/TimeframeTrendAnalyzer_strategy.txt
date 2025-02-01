@@ -2,24 +2,35 @@ STRATEGY_NAME: TimeframeTrendAnalyzer
 
 STRATEGY_DETAILS:
 
-This strategy, named TimeframeTrendAnalyzer, is a trend trading approach specifically designed for crypto markets. It relies on analyzing different time frames to identify Market structures and trends, without using any indicators.
+This strategy focuses on understanding different market structures in various time frames to identify potential entry points in trends. It uses a simple approach of higher highs and higher lows for uptrends and lower highs and lower lows for downtrends.
 
 Key strategy components:
-1. Analyzing different time frames, from weekly to 15-minute charts.
-2. Identifying Market structures: uptrends (higher lows and higher highs) and downtrends (lower lows and lower highs).
-3. Focusing on the weekly time frame to identify the overall direction of the market.
-4. Utilizing the daily, 4-hour, and 1-hour time frames to confirm trends and look for entries.
+1. Identifying market structures in different time frames.
+2. Analyzing trends based on higher highs and higher lows (for uptrends) and lower highs and lower lows (for downtrends).
+3. Using a bottom-up approach, starting from the weekly time frame and moving down to the 15-minute time frame.
 
-Entry/exit rules:
-1. Enter a trade when the 1-hour time frame trend breaks in the direction of the daily, 4-hour, and weekly trends.
-2. Set a stop loss above or below the previous high or low, depending on the trade direction, targeting a risk-reward ratio of at least 1:2.
-3. Once in profit, consider adjusting the stop loss to the break-even point and gradually taking profits.
+Entry rules:
+1. Start with the weekly time frame and identify the overall market structure.
+2. If the weekly time frame is bullish, move down to the daily time frame and look for a similar trend.
+3. If the daily trend is also bullish, look for a potential entry on the four-hour time frame.
+4. Identify a clear trend on the four-hour time frame (uptrend or downtrend).
+5. If there is no clear trend on the four-hour time frame, move down to the one-hour time frame and wait for a trend to break in one direction.
+6. Set an order for a potential short trade if the trend breaks downwards or a long trade if the trend breaks upwards.
+7. Wait for an alert when the trend breaks on the 50-minute time frame.
+8. Enter the position on the 50-minute time frame when the trend breaks.
+
+Exit rules:
+1. Set a stop loss above the previous high for a short trade or below the previous low for a long trade.
+2. Set a take profit above the previous low for a short trade or below the previous high for a long trade.
+3. Aim for a risk-reward ratio of 1:2 or more.
 
 Risk management:
-- Set a realistic stop loss based on Market structure and risk-reward ratio.
-- Manage risks by adjusting stop losses and taking profits as the trade progresses.
+1. Understand the overall market structure and set realistic targets.
+2. Set a stop loss to minimize potential losses.
+3. Set a take profit to secure potential profits.
+4. Maintain a positive risk-reward ratio for long-term profitability.
 
 Required indicators:
-- None (the strategy relies on visual trend analysis).
+1. None (this strategy is based on price action and trend analysis without using any indicators).
 
-In summary, the TimeframeTrendAnalyzer strategy focuses on understanding Market structures in various time frames, identifying trends, and entering trades when the shorter time frame trends break in the direction of the longer time frames. This approach provides a simple, reliable, and indicator-free method for trading crypto markets.
+This strategy, named TimeframeTrendAnalyzer, focuses on understanding and analyzing market structures in various time frames to identify potential entry points in trends. It uses a bottom-up approach, starting from the weekly time frame and moving down to the 15-minute time frame, ensuring that the overall market structure is bullish before entering a position. By following these steps, traders can avoid making mistakes and maintain a simple, reliable, and profitable strategy for crypto trading.

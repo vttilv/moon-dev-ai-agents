@@ -1,182 +1,198 @@
+Below is an end‐to‐end Python script that implements the “DynamicValidation” strategy according to your specifications. Make sure you have installed the required libraries (backtesting, pandas, numpy, talib) before running this script.
+
+────────────────────────────────────────────
 #!/usr/bin/env python3
-"""
-Moon Dev's Backtest AI 🌙 – DynamicValidation Strategy Backtest Implementation
-
-This strategy – DynamicValidation – focuses on market structure,
-supply & demand zones and strict risk-reward management. It uses TA‐Lib
-calculations (wrapped in self.I()) for indicators like SMA and swing highs/lows.
-It enters long trades in an uptrend when price re‐enters a demand zone
-(with stop loss right below the zone and take profit at a recent high),
-and enters short trades in a downtrend when price re‐enters a supply zone
-(with stop loss just above the zone and take profit at a recent low).
-Trades are executed only if the risk:reward is above the defined minimum.
-
-Plenty of Moon Dev themed debug prints included for easier troubleshooting! 🌙✨🚀
-"""
-
-# ─── ALL NECESSARY IMPORTS ─────────────────────────────────────────────
 import os
 import pandas as pd
 import numpy as np
 import talib
 from backtesting import Backtest, Strategy
 
-# ─── STRATEGY CLASS DEFINITION WITH INDICATORS, ENTRY/EXIT LOGIC & RISK MANAGEMENT ─────────────────────────
+# ─── DYNAMIC VALIDATION STRATEGY ──────────────────────────────
 class DynamicValidation(Strategy):
-    """
-    DynamicValidation Strategy
-
-    Parameters for optimization are defined as class attributes:
-      • risk_reward_min : Minimum acceptable risk/reward ratio (default 2.5)
-      • zone_buffer_bp  : Stop-loss offset (in basis points, where 1 bp = 0.001) (default 2 → 0.002)
-      • zone_tolerance_bp : Tolerance for re-entry into the zone (default 2 bp)
-      • risk_percent    : Risk percentage per trade (as an integer percentage; default 1 → 1%)
-      • ma_period       : Moving Average period for trend determination (default 50)
-      • pivot_period    : Period to compute recent swing highs/lows (default 20)
-    """
-    risk_reward_min = 2.5       # Must be >=2.5 (non-negotiable risk/reward threshold)
-    zone_buffer_bp = 2          # Basis points for stop-loss buffer (e.g., 2 => 0.002)
-    zone_tolerance_bp = 2       # Basis points for acceptable zone re-entry (e.g., 2 => 0.002)
-    risk_percent = 1            # Risk 1% of equity per trade (as a whole percent)
-    ma_period = 50              # Period for trend indicator (SMA)
-    pivot_period = 20           # Lookback period to compute swing highs/lows as zones
+    # Strategy parameters (these will be optimized later)
+    lookback = 20                # Lookback period for swing detection
+    risk_reward_ratio = 2.5      # Minimum risk-reward ratio required (e.g. 2.5:1)
+    zone_buffer = 10             # Price offset buffer (in dollars) for validating zones
+    risk_pct = 0.01              # Risk 1% of equity per trade
 
     def init(self):
-        # Indicators: Use self.I() wrapper with talib functions!
-        self.sma = self.I(talib.SMA, self.data.Close, timeperiod=self.ma_period)
-        self.pivot_high = self.I(talib.MAX, self.data.High, timeperiod=self.pivot_period)
-        self.pivot_low = self.I(talib.MIN, self.data.Low, timeperiod=self.pivot_period)
-
-        print("🌙✨ [INIT] DynamicValidation initialized with parameters:")
-        print(f"    MA Period: {self.ma_period}, Pivot Period: {self.pivot_period}")
-        print(f"    Risk Reward Min: {self.risk_reward_min}")
-        print(f"    Zone Buffer (bp): {self.zone_buffer_bp}, Zone Tolerance (bp): {self.zone_tolerance_bp}")
-        print(f"    Risk Percent per trade: {self.risk_percent}% 🚀")
-
+        # Calculate swing levels using TA‐Lib functions wrapped by self.I() 
+        # (DON’T use backtesting.py’s built‐in indicators!)
+        self.demand = self.I(talib.MIN, self.data.Low, timeperiod=self.lookback)   # Swing low = Demand Zone in uptrends
+        self.supply = self.I(talib.MAX, self.data.High, timeperiod=self.lookback)  # Swing high = Supply Zone in downtrends
+        print("🌙 [DynamicValidation] Indicators INIT – Swing Low (Demand) & Swing High (Supply) set with lookback =", self.lookback, "🚀")
+        
     def next(self):
-        # Convert basis point parameters to floats
-        zone_buffer = self.zone_buffer_bp / 1000.0      # E.g., 2 bp -> 0.002
-        zone_tolerance = self.zone_tolerance_bp / 1000.0  # E.g., 2 bp -> 0.002
-        risk_pct = self.risk_percent / 100.0              # E.g., 1% -> 0.01
+        # Get the current bar price and time (for debug prints)
+        current_price = self.data.Close[-1]
+        bar_time = self.data.index[-1]
+        print(f"✨ [DynamicValidation] New bar @ {bar_time}: Price = {current_price:.2f}")
+        
+        # Ensure we have at least 'lookback' bars for trend validation
+        if len(self.data.Close) < self.lookback:
+            return
 
-        current_close = self.data.Close[-1]
-        current_sma = self.sma[-1]
-        # Determine trend: uptrend if close > SMA, else downtrend
-        uptrend = current_close > current_sma
-
-        if uptrend:
-            print("🌙💫 [TREND] Uptrend confirmed!")
-            # In an uptrend, demand zone = recent swing low
-            demand_zone = self.pivot_low[-1]
-            # Debug print the zone levels
-            print(f"🌙 [ZONE] Demand Zone (Pivot Low): {demand_zone:.2f}")
-            # Entry condition: price re-enters (i.e. is near) the demand zone
-            if current_close <= demand_zone * (1 + zone_tolerance):
-                entry_price = current_close
-                stop_loss = demand_zone * (1 - zone_buffer)  # Stop loss just below the demand zone
-                take_profit = self.pivot_high[-1]             # Take profit at the recent swing high
-                risk = entry_price - stop_loss
-                reward = take_profit - entry_price
-
-                if risk <= 0:
-                    print("🌙⚠️ [SKIP] Long trade skipped: NON-POSITIVE risk calculation!")
-                else:
-                    rr = reward / risk
-                    print(f"🌙🔍 [SETUP] Long Trade Setup: Entry={entry_price:.2f}, SL={stop_loss:.2f}, TP={take_profit:.2f}")
-                    print(f"         Risk = {risk:.2f}, Reward = {reward:.2f}, RR = {rr:.2f}")
-                    if rr >= self.risk_reward_min:
-                        # Calculate position size based on risk amount (risk_pct of current equity)
-                        risk_amount = risk_pct * self.equity
-                        qty = risk_amount / risk
-                        print(f"🚀🌙 [ORDER] MOON LAUNCH LONG: Entry: {entry_price:.2f}, SL: {stop_loss:.2f}, TP: {take_profit:.2f}, Qty: {qty:.4f}")
-                        self.buy(size=qty, sl=stop_loss, tp=take_profit)
-                    else:
-                        print(f"🌙⚠️ [SKIP] Long trade rejected: Insufficient RR ({rr:.2f} < {self.risk_reward_min})")
+        # Simple trend determination: compare current close with the close from 'lookback' bars ago
+        previous_price = self.data.Close[-self.lookback]
+        if current_price > previous_price:
+            trend = "uptrend"
+        elif current_price < previous_price:
+            trend = "downtrend"
         else:
-            print("🌙💫 [TREND] Downtrend confirmed!")
-            # In a downtrend, supply zone = recent swing high
-            supply_zone = self.pivot_high[-1]
-            print(f"🌙 [ZONE] Supply Zone (Pivot High): {supply_zone:.2f}")
-            # Entry condition: price re-enters the supply zone
-            if current_close >= supply_zone * (1 - zone_tolerance):
-                entry_price = current_close
-                stop_loss = supply_zone * (1 + zone_buffer)  # Stop loss just above the supply zone
-                take_profit = self.pivot_low[-1]              # Take profit at the recent swing low
-                risk = stop_loss - entry_price
-                reward = entry_price - take_profit
+            trend = "sideways"
+        print(f"🚀 [Moon Dev] Market trend determined as: {trend.upper()}")
 
-                if risk <= 0:
-                    print("🌙⚠️ [SKIP] Short trade skipped: NON-POSITIVE risk calculation!")
-                else:
-                    rr = reward / risk
-                    print(f"🌙🔍 [SETUP] Short Trade Setup: Entry={entry_price:.2f}, SL={stop_loss:.2f}, TP={take_profit:.2f}")
-                    print(f"         Risk = {risk:.2f}, Reward = {reward:.2f}, RR = {rr:.2f}")
-                    if rr >= self.risk_reward_min:
-                        risk_amount = risk_pct * self.equity
-                        qty = risk_amount / risk
-                        print(f"🚀🌙 [ORDER] MOON LAUNCH SHORT: Entry: {entry_price:.2f}, SL: {stop_loss:.2f}, TP: {take_profit:.2f}, Qty: {qty:.4f}")
-                        self.sell(size=qty, sl=stop_loss, tp=take_profit)
-                    else:
-                        print(f"🌙⚠️ [SKIP] Short trade rejected: Insufficient RR ({rr:.2f} < {self.risk_reward_min})")
+        # Get the most-recent swing levels from our TA indicators
+        current_demand = self.demand[-1]
+        current_supply = self.supply[-1]
+        print(f"🌙 [Moon Dev] Current Demand Zone (Swing LOW): {current_demand:.2f}")
+        print(f"🌙 [Moon Dev] Current Supply Zone (Swing HIGH): {current_supply:.2f}")
 
-# ─── MAIN BACKTEST EXECUTION ─────────────────────────────────────────
-if __name__ == '__main__':
-    # Data Handling and Cleaning (Moon Dev style! 🌙🚀)
+        # If already in a trade, maintain the position.
+        if self.position:
+            print("✨ [Moon Dev] Already in a position – holding... 🚀")
+            return
+
+        # ─── LONG ENTRY (Uptrend: Price reenters a DEMAND zone) ───────────────
+        if trend == "uptrend" and current_price <= (current_demand + self.zone_buffer):
+            entry = current_price
+            stop_loss = current_demand - self.zone_buffer  # Place SL just below demand zone
+            take_profit = current_supply                    # TP at recent high (supply zone)
+            risk = entry - stop_loss
+            reward = take_profit - entry
+
+            print(f"🚀 [Moon Dev] Evaluating LONG trade – Entry: {entry:.2f}, SL: {stop_loss:.2f}, TP: {take_profit:.2f}")
+            print(f"🌙 [Moon Dev] Calculated Risk: {risk:.2f} | Reward: {reward:.2f}")
+            
+            if risk <= 0:
+                print("🌙 [Moon Dev] Invalid (non-positive) risk for LONG trade – skipping trade!")
+                return
+
+            rr_ratio = reward / risk
+            print(f"✨ [Moon Dev] LONG Risk/Reward Ratio: {rr_ratio:.2f}")
+            
+            if rr_ratio >= self.risk_reward_ratio:
+                risk_amount = self.risk_pct * self.equity
+                position_size = risk_amount / risk
+                # IMPORTANT: size must be a whole number of units
+                position_size = int(round(position_size))
+                
+                if position_size <= 0:
+                    print("🌙 [Moon Dev] Calculated position size is zero – skipping LONG trade!")
+                    return
+
+                print(f"🚀 [Moon Dev] Placing LONG order with size {position_size}.")
+                self.buy(size=position_size, sl=stop_loss, tp=take_profit)
+            else:
+                print(f"🌙 [Moon Dev] LONG trade rejected – Risk/Reward Ratio ({rr_ratio:.2f}) is below required {self.risk_reward_ratio}")
+
+        # ─── SHORT ENTRY (Downtrend: Price reenters a SUPPLY zone) ───────────────
+        elif trend == "downtrend" and current_price >= (current_supply - self.zone_buffer):
+            entry = current_price
+            stop_loss = current_supply + self.zone_buffer  # Place SL just above supply zone
+            take_profit = current_demand                     # TP at recent low (demand zone)
+            risk = stop_loss - entry
+            reward = entry - take_profit
+
+            print(f"🌙 [Moon Dev] Evaluating SHORT trade – Entry: {entry:.2f}, SL: {stop_loss:.2f}, TP: {take_profit:.2f}")
+            print(f"🚀 [Moon Dev] Calculated Risk: {risk:.2f} | Reward: {reward:.2f}")
+
+            if risk <= 0:
+                print("🚀 [Moon Dev] Invalid (non-positive) risk for SHORT trade – skipping trade!")
+                return
+
+            rr_ratio = reward / risk
+            print(f"✨ [Moon Dev] SHORT Risk/Reward Ratio: {rr_ratio:.2f}")
+
+            if rr_ratio >= self.risk_reward_ratio:
+                risk_amount = self.risk_pct * self.equity
+                position_size = risk_amount / risk
+                position_size = int(round(position_size))
+                
+                if position_size <= 0:
+                    print("🚀 [Moon Dev] Calculated position size is zero – skipping SHORT trade!")
+                    return
+
+                print(f"🌙 [Moon Dev] Placing SHORT order with size {position_size}.")
+                self.sell(size=position_size, sl=stop_loss, tp=take_profit)
+            else:
+                print(f"🚀 [Moon Dev] SHORT trade rejected – Risk/Reward Ratio ({rr_ratio:.2f}) is below required {self.risk_reward_ratio}")
+        else:
+            print("✨ [Moon Dev] No valid trade setup detected on this bar.")
+
+# ─── MAIN EXECUTION ─────────────────────────────────────────────
+if __name__ == "__main__":
+    # Use the provided data path
     data_path = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv"
-    print("🌙🚀 [DATA] Loading data from:", data_path)
+    print("🌙 Moon Dev: Loading data from CSV... 🚀")
     data = pd.read_csv(data_path)
-    # Clean column names: remove extra spaces & lower-case
-    data.columns = data.columns.str.strip().str.lower()
-    # Drop any unnamed columns
-    data = data.drop(columns=[col for col in data.columns if 'unnamed' in col.lower()])
-    # Map columns to backtesting requirements with proper case
-    data.rename(columns={'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'}, inplace=True)
-    # Convert datetime if available & set as index
-    if "datetime" in data.columns:
-        data["datetime"] = pd.to_datetime(data["datetime"])
-        data.set_index("datetime", inplace=True)
-    print("🌙✨ [DATA] Data cleansing complete! Ready for liftoff! 🚀")
-
-    # Run initial backtest with default parameters and starting cash of 1,000,000
-    bt = Backtest(data, DynamicValidation, cash=1000000, commission=0.0)
-    print("🚀🌕 [BACKTEST] Running initial backtest with default parameters!")
-    stats = bt.run()
-    print("🌙✨ [STATS] Initial Backtest Results:")
-    print(stats)
-    print("🌙✨ [STRATEGY PARAMS] " + str(stats._strategy))
-    # Save initial performance chart to charts directory
-    chart_file_initial = os.path.join("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/charts", "DynamicValidation_initial_chart.html")
-    bt.plot(filename=chart_file_initial, open_browser=False)
-    print("🌙🚀 [CHART] Initial chart saved to:")
-    print(chart_file_initial)
-
-    # ─── PARAMETER OPTIMIZATION ─────────────────────────────
-    print("🚀🌕 [OPTIMIZE] Running optimization – Moon Dev is polishing your parameters! 🌙✨")
-    optimized_stats = bt.optimize(
-        risk_reward_min=range(3, 6, 1),      # Try risk_reward_min values: 3, 4, 5
-        zone_buffer_bp=range(1, 4, 1),         # Try 1, 2, 3 bp → (0.001, 0.002, 0.003)
-        pivot_period=range(15, 31, 5),          # Try pivot periods: 15, 20, 25, 30
-        ma_period=range(40, 61, 10)             # Try MA periods: 40, 50, 60
-    )
-    print("🌙✨ [OPTIMIZED STATS] Optimized Backtest Results:")
-    print(optimized_stats)
-    best_params = optimized_stats._strategy
-    print("🌙🚀 [BEST PARAMS] Best strategy parameters found:")
-    print(best_params)
-
-    # Re-run backtest using the optimized parameters for the final performance plot
-    bt_opt = Backtest(data, DynamicValidation, cash=1000000, commission=0.0)
-    # Depending on the Backtesting version, best_params might be a namedtuple.
-    # Use its dictionary representation.
-    try:
-        params_dict = best_params._asdict()
-    except AttributeError:
-        params_dict = vars(best_params)
-    stats_opt = bt_opt.run(**params_dict)
-    chart_file_optimized = os.path.join("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/charts", "DynamicValidation_optimized_chart.html")
-    bt_opt.plot(filename=chart_file_optimized, open_browser=False)
-    print("🌙🚀 [CHART] Optimized chart saved to:")
-    print(chart_file_optimized)
-    print("🌙🚀 [DONE] Optimization & backtesting complete! Enjoy your Moon Dev charts! ✨")
     
-# END OF FILE
+    # Clean column names and drop any unnamed columns
+    data.columns = data.columns.str.strip().str.lower()
+    data = data.drop(columns=[col for col in data.columns if 'unnamed' in col.lower()])
+    
+    # Map columns to backtesting.py requirements (Proper case names!)
+    data.rename(columns={
+        'open': 'Open', 
+        'high': 'High', 
+        'low': 'Low', 
+        'close': 'Close', 
+        'volume': 'Volume'
+    }, inplace=True)
+    
+    print("✨ Moon Dev: Data columns after cleaning:", list(data.columns))
+    
+    # If there is a datetime column, convert it and set as index
+    if 'datetime' in data.columns:
+        data['datetime'] = pd.to_datetime(data['datetime'])
+        data.set_index('datetime', inplace=True)
+
+    # Instantiate the Backtest with starting capital of 1,000,000 as required
+    bt = Backtest(data, DynamicValidation, cash=1000000, commission=0.0)
+    
+    print("🚀 Moon Dev: Running initial backtest for DynamicValidation strategy! 🌙")
+    stats = bt.run()
+    print("✨ Moon Dev: Backtest Statistics:")
+    print(stats)
+    print("🌙 Moon Dev: Strategy details:")
+    print(stats._strategy)
+    
+    # Save initial performance plot
+    strategy_name = "DynamicValidation"
+    charts_dir = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/charts"
+    os.makedirs(charts_dir, exist_ok=True)
+    chart_file = os.path.join(charts_dir, f"{strategy_name}_chart.html")
+    print(f"🚀 Moon Dev: Saving initial performance chart to {chart_file}")
+    bt.plot(filename=chart_file, open_browser=False)
+    
+    # ─── PARAMETER OPTIMIZATION ─────────────────────────────
+    print("🌙 Moon Dev: Starting parameter optimization! ✨")
+    optimized_results = bt.optimize(
+        lookback=range(10, 31, 10),              # Try lookback values 10, 20, 30
+        risk_reward_ratio=[2.5, 3.0],             # Test required risk-reward ratio values
+        zone_buffer=range(10, 21, 10),            # Try zone buffers 10 and 20 dollars
+        maximize='Equity Final [$]'              # Optimize for final equity
+    )
+    print("🚀 Moon Dev: Optimized strategy results:")
+    print(optimized_results)
+    print("🌙 Moon Dev: Optimized strategy details:")
+    print(optimized_results._strategy)
+    
+    # Save optimized performance plot
+    chart_file_opt = os.path.join(charts_dir, f"{strategy_name}_Optimized_chart.html")
+    print(f"✨ Moon Dev: Saving optimized performance chart to {chart_file_opt}")
+    bt.plot(filename=chart_file_opt, open_browser=False)
+    
+    print("🚀 Moon Dev: Backtesting and Optimization Completed! 🌙")
+────────────────────────────────────────────
+  
+How the script works:
+1. It loads and cleans the data from the CSV file by removing extra spaces, dropping any unnamed columns, and renaming columns to “Open”, “High”, “Low”, “Close”, and “Volume”.
+2. In the DynamicValidation strategy class, the init() method computes the swing high and low zones using TA‐Lib’s MAX and MIN functions (via self.I).
+3. In next(), the strategy first identifies whether the market is in an uptrend or downtrend (by comparing the current close with the close from “lookback” bars ago). Then it checks whether price has reentered a demand (in an uptrend) or supply (in a downtrend) zone.
+4. Before entering a trade, it carefully calculates the stop loss, take profit, risk, and reward. Only if the computed risk-reward ratio meets or exceeds the minimum requirement (2.5:1 by default) does it calculate a proper integer position size (using 1% risk of current equity) and place the order.
+5. After running the initial backtest (with a starting capital of 1,000,000), the script prints full statistics and saves the performance chart.
+6. Then it performs parameter optimization on lookback, risk-reward ratio, and zone buffer values. The optimized results (with full strategy details) are printed and another performance chart is saved.
+
+Enjoy debugging with plenty of Moon Dev themed prints and happy backtesting! 🌙✨🚀
