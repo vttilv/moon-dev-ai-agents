@@ -1,0 +1,26 @@
+STRATEGY_NAME: AccumulationManipulation
+
+STRATEGY_DETAILS:
+
+1. Key strategy components:
+   - Accumulation: Price moves sideways or consolidates, creating resting liquidity above and below these areas.
+   - Manipulation: A liquidity grab in the form of a manipulation to the upside or downside, followed by distribution, which causes price to skyrocket in the opposite direction.
+
+2. Entry/exit rules:
+   - Identify the daily bias using the 1H time frame (uptrend or downtrend).
+   - Focus on the 5-minute time frame for trades between 10:00 a.m. and 11:30 a.m. Eastern Standard Time.
+   - Look for accumulation (sideways movement) inside the specified time frame.
+   - After accumulation, look for manipulation (price movement in the direction of the daily bias).
+   - Enter a trade when a fair value gap is present after the manipulation.
+   - Set a stop loss below the low of the manipulation move.
+   - Set a take profit at the high of the fair value gap.
+   - For improved take profit levels, use a Fibonacci retracement tool with specific values: 1, 0.79, 0.62, 0, -1, -2, -2.5, and -4. Make -2 and -2.5 red to identify the main take profit area.
+
+3. Risk management:
+   - Ensure that the trade setup occurs between 10:00 a.m. and 11:30 a.m. Eastern Standard Time.
+   - Do not take trades outside this time frame.
+
+4. Required indicators:
+   - Fibonacci retracement tool
+
+This strategy, named AccumulationManipulation, focuses on identifying accumulation and manipulation in the market within a specific time frame. By using the Fibonacci retracement tool, traders can optimize take profit levels. Stick to the specified time frame and entry/exit rules for effective risk management.

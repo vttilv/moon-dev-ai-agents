@@ -1,165 +1,200 @@
-Below is the complete Python file that implements the GapAdvantage strategy with full debugging, risk management and parameter optimization. Save this file (for example as gapadvantage_backtest.py) and run it in your Python environment. Enjoy the Moon Dev vibes! 🌙✨🚀
-
-------------------------------------------------------------
 #!/usr/bin/env python3
+"""
+Moon Dev's Backtest AI 🌙 🚀
+
+Backtesting implementation for the GapAdvantage strategy.
+This strategy focuses on capturing a sliver of a large move after a gap/breakout.
+Please ensure you have installed the required packages:
+    pip install backtesting pandas numpy TA-Lib pandas_ta
+"""
+
 import os
 import numpy as np
 import pandas as pd
 import talib
+import pandas_ta as pta  # may be used in helper functions if needed
 from backtesting import Backtest, Strategy
 
-# ─── HELPER FUNCTION: VWAP CALCULATION ─────────────────────────────
-def calc_vwap(o, h, l, c, v):
-    # VWAP = cumulative((High+Low+Close)/3 * Volume) / cumulative(Volume)
-    typical_price = (h + l + c) / 3.0
-    cum_vol = np.cumsum(v)
-    cum_vol_price = np.cumsum(typical_price * v)
-    return cum_vol_price / cum_vol
+# ─── UTILITY FUNCTIONS FOR INDICATORS ────────────────────────────────────────────
+def VWAP(high, low, close, volume):
+    """
+    Calculate the Volume Weighted Average Price (VWAP).
 
-# ─── STRATEGY CLASS ────────────────────────────────────────────────
+    VWAP = cumulative((typical price × volume))/cumulative(volume)
+    Typical Price = (High + Low + Close)/3
+    """
+    typical = (high + low + close) / 3.0
+    cum_vol = np.cumsum(volume)
+    # Avoid division by zero
+    cum_vol[cum_vol == 0] = 1e-10
+    vwap = np.cumsum(typical * volume) / cum_vol
+    return vwap
+
+# ─── STRATEGY CLASS DEFINITION ─────────────────────────────────────────────────────
 class GapAdvantage(Strategy):
-    # Strategy optimization parameters (using integer representations as needed)
-    # gap_threshold_bp represents gap threshold in basis points (divided by 1000 to get ratio)
-    gap_threshold_bp = 10         # 10 means 1.0% gap
-    stop_loss_multiplier = 2      # stops based on ATR multiples
-    take_profit_multiplier = 3    # take profit based on ATR multiples
-    risk_percent = 1              # risk 1% of equity per trade
+    # Optimization parameters
+    fast_ma_period = 9          # Moving average period for entry signal (default 9)
+    slow_ma_period = 20         # Moving average period for trend (default 20)
+    risk_reward_ratio = 1       # risk-reward ratio; must be at least 1 (default 1)
+    
+    # Fixed risk percentage per trade (percentage of equity to risk)
+    risk_pct = 0.01             # 1% risk per trade
 
     def init(self):
-        # Calculate indicators using self.I wrapper and TA-Lib functions
-        # Moving averages
-        self.sma9 = self.I(talib.SMA, self.data.Close, timeperiod=9)
-        self.sma20 = self.I(talib.SMA, self.data.Close, timeperiod=20)
-        # ATR for risk management calculation (period =14)
-        self.atr = self.I(talib.ATR, self.data.High, self.data.Low, self.data.Close, timeperiod=14)
-        # VWAP using our custom function – note: we use Open, High, Low, Close, Volume
-        self.vwap = self.I(calc_vwap,
-                           self.data.Open, self.data.High, self.data.Low, self.data.Close, self.data.Volume)
-        # To store our entry price for risk management in a trade
+        # Debug print: initialize indicators 🌙✨
+        print("🌙 [MoonDev Debug] Initializing GapAdvantage Strategy indicators...")
+
+        # Calculate the fast and slow moving averages using TA-Lib's SMA.
+        self.fast_ma = self.I(talib.SMA, self.data.Close, timeperiod=self.fast_ma_period)
+        self.slow_ma = self.I(talib.SMA, self.data.Close, timeperiod=self.slow_ma_period)
+        
+        # Calculate VWAP indicator using our custom function.
+        self.vwap = self.I(VWAP, self.data.High, self.data.Low, self.data.Close, self.data.Volume)
+        
+        # For a recent swing high used for entry check, we use a 5-period highest high.
+        self.recent_high = self.I(talib.MAX, self.data.High, timeperiod=5)
+        
+        # Store entry order details for risk management.
         self.entry_price = None
-        print("🌙✨ [INIT] GapAdvantage strategy initialized with parameters:")
-        print(f"    gap_threshold_bp: {self.gap_threshold_bp} (i.e. {self.gap_threshold_bp/1000:.3f})")
-        print(f"    stop_loss_multiplier: {self.stop_loss_multiplier} | take_profit_multiplier: {self.take_profit_multiplier}")
-        print(f"    risk_percent: {self.risk_percent}%\n🚀 Let the Moon Dev magic begin!")
-    
+        self.current_stop = None
+        self.trailing_stop = None
+
+        print("🚀 [MoonDev Debug] Indicators loaded: fast MA (period={}), slow MA (period={}), VWAP.".format(
+            self.fast_ma_period, self.slow_ma_period))
+
     def next(self):
-        # Debug: print the current bar index and key indicator values from last bar
-        bar_index = len(self.data.Close) - 1
-        print(f"🌙✨ [NEXT] Processing bar #{bar_index}: Close={self.data.Close[-1]:.2f}, VWAP={self.vwap[-1]:.2f}, SMA9={self.sma9[-1]:.2f}")
+        # Get current price information
+        price = self.data.Close[-1]
+        high = self.data.High[-1]
+        low = self.data.Low[-1]
         
-        # Convert our gap threshold in bp to a ratio
-        gap_threshold = self.gap_threshold_bp / 1000.0
-
-        # ---------------- ENTRY LOGIC ----------------
-        if not self.position:  # Only examine entry if no existing position
-            if bar_index >= 2:
-                # Calculate the gap: current bar open compared to previous bar close
-                prev_close = self.data.Close[-2]
-                current_open = self.data.Open[-1]
-                gap = (current_open - prev_close) / prev_close
-                print(f"🚀 [ENTRY CHECK] Gap = {gap:.3f} (threshold: {gap_threshold:.3f})")
-                
-                # If a sufficient gap (up) is detected AND price is pulling back to near VWAP/SMA9
-                if gap >= gap_threshold and self.data.Close[-1] > self.vwap[-1] and self.data.Close[-1] > self.sma9[-1]:
-                    # Calculate stop level based on ATR and risk management parameters
-                    stop_loss = self.data.Close[-1] - self.atr[-1] * self.stop_loss_multiplier
-                    # Risk per unit is the distance from entry to stop loss
-                    risk_per_unit = self.data.Close[-1] - stop_loss
-                    # Calculate risk amount as a percentage of current equity
-                    risk_amount = self.equity * (self.risk_percent / 100)
-                    # Calculate the number of units, ensuring an integer number
-                    position_size = int(round(risk_amount / risk_per_unit))
-                    if position_size <= 0:
-                        print("🌙 [ENTRY ALERT] Calculated position size is 0, skipping entry.")
-                        return
+        # Moon Dev themed debug prints
+        print("🌙 [MoonDev] New candle: Price = {:.2f}, High = {:.2f}, Low = {:.2f}".format(price, high, low))
+        
+        # Check if we are not in the market and look for an entry signal.
+        if not self.position:
+            # Entry Condition: Price must be above fast MA and VWAP.
+            # Also, check that current high exceeds the previous swing high turning point.
+            if price > self.fast_ma[-1] and price > self.vwap[-1]:
+                # Use the recent high indicator: if today's high is a new high compared to 1 period ago.
+                if high >= self.recent_high[-2]:
+                    # Debug print
+                    print("🚀 [MoonDev ENTRY] Conditions met! Price {:.2f} > fast MA {:.2f} and VWAP {:.2f}.".format(
+                        price, self.fast_ma[-1], self.vwap[-1]))
                     
-                    print(f"✨🚀 [ENTRY SIGNAL] Gap detected! Entry@{self.data.Close[-1]:.2f} | Stop Loss@{stop_loss:.2f} | "
-                          f"Risk per unit={risk_per_unit:.2f} | Position size={position_size}")
-                    # Enter the position
-                    self.buy(size=position_size)
-                    self.entry_price = self.data.Close[-1]
-        
-        # ---------------- EXIT LOGIC ----------------
-        elif self.position:
-            # Calculate current stop loss and take profit levels based on the entry price
-            current_stop = self.entry_price - self.atr[-1] * self.stop_loss_multiplier
-            current_target = self.entry_price + self.atr[-1] * self.take_profit_multiplier
+                    # Calculate stop loss based on a fixed risk% of the entry price.
+                    risk_dollar = price * self.risk_pct
+                    stop_loss = price - risk_dollar
+                    # Calculate position size safely: position_size = risk_amount / risk per share.
+                    # Since risk per share = price - stop_loss = price * risk_pct.
+                    position_size = int(round(self.equity * self.risk_pct / (price - stop_loss)))
+                    
+                    if position_size <= 0:
+                        print("🌙 [MoonDev ERROR] Position size calculated as 0. Skipping trade.")
+                    else:
+                        print("🌙 [MoonDev ENTRY] Buying {} units at {:.2f} with stop loss {:.2f} (Risk: ${:.2f}).".format(
+                            position_size, price, stop_loss, risk_dollar))
+                        self.entry_price = price
+                        self.current_stop = stop_loss
+                        # Set trailing stop initially equal to stop loss.
+                        self.trailing_stop = stop_loss
+                        self.buy(size=position_size)
+        else:
+            # We are in a trade. Update trailing stop if price is moving in our favor.
+            # For simplicity, our new trailing stop will be a fraction (risk_dollar) below the highest price reached.
+            highest_price = max(self.data.Close[-len(self.data.Close):])
+            new_trailing_stop = highest_price - (self.entry_price * self.risk_pct)
+            # Only update if it moves upward.
+            if new_trailing_stop > self.trailing_stop:
+                self.trailing_stop = new_trailing_stop
+                print("✨ [MoonDev] Trailing stop updated to {:.2f}".format(self.trailing_stop))
             
-            # Check if stop loss is hit
-            if self.data.Low[-1] <= current_stop:
-                print(f"🌙🚨 [EXIT SIGNAL] Stop loss hit! Current Low={self.data.Low[-1]:.2f} <= Stop Level={current_stop:.2f}")
+            # Check exit conditions:
+            # 1. Price goes above profit target: target = entry + risk_reward_ratio * (entry * risk_pct)
+            profit_target = self.entry_price + self.risk_reward_ratio * (self.entry_price * self.risk_pct)
+            if high >= profit_target:
+                print("🚀 [MoonDev EXIT] Profit target hit! Price reached {:.2f} (target: {:.2f}). Exiting trade.".format(
+                    high, profit_target))
                 self.position.close()
                 self.entry_price = None
-            # Check if take profit level is reached
-            elif self.data.High[-1] >= current_target:
-                print(f"🌙✨ [EXIT SIGNAL] Take profit triggered! Current High={self.data.High[-1]:.2f} >= Target={current_target:.2f}")
+                self.current_stop = None
+                self.trailing_stop = None
+            # 2. Price falls below trailing stop or the initial stop loss.
+            elif low <= self.trailing_stop or low <= self.current_stop:
+                print("🌙 [MoonDev EXIT] Stop loss triggered! Price dropped to {:.2f} (stop: {:.2f}). Exiting trade.".format(
+                    low, self.trailing_stop if low <= self.trailing_stop else self.current_stop))
                 self.position.close()
                 self.entry_price = None
+                self.current_stop = None
+                self.trailing_stop = None
 
-# ─── DATA HANDLING & CLEANING ─────────────────────────────────────
+# ─── DATA LOADING AND CLEANING ────────────────────────────────────────────────────
 data_path = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv"
-print("🌙✨ [DATA] Loading data from:", data_path)
-data = pd.read_csv(data_path, parse_dates=['datetime'])
+print("🌙 [MoonDev] Loading data from {} ...".format(data_path))
+data = pd.read_csv(data_path)
 
-# Clean column names: remove extra spaces and lower-case everything
-data.columns = data.columns.str.strip().str.lower()
-# Drop any unnamed columns
+# Clean column names: remove spaces and set proper case.
+data.columns = data.columns.str.strip().str.lower()  # lower case for cleaning
 data = data.drop(columns=[col for col in data.columns if 'unnamed' in col.lower()])
 
-# Ensure proper column mapping with the required case for backtesting.py
-required_columns = {'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'}
-data.rename(columns=required_columns, inplace=True)
+# Map cleaned columns to expected Backtesting column names with capitalized first letters.
+column_mapping = {'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'}
+data = data.rename(columns=column_mapping)
 
-print("🌙✨ [DATA] Data columns after cleaning and mapping are:", list(data.columns))
-print("🚀 Let’s trade among the stars!\n")
+# If datetime is present, convert (if needed) and set as index.
+if "datetime" in data.columns:
+    data["Datetime"] = pd.to_datetime(data["datetime"])
+    data = data.sort_values("Datetime")
+    data.set_index("Datetime", inplace=True)
 
-# ─── BACKTEST INITIALIZATION & EXECUTION ──────────────────────────
-bt = Backtest(data, GapAdvantage, cash=1000000, commission=0.002, exclusive_orders=True)
-print("🌙✨ [BACKTEST] Starting initial backtest run...\n")
+print("🚀 [MoonDev] Data loaded and cleaned. Columns: {}".format(list(data.columns)))
+
+# ─── INITIAL BACKTEST EXECUTION ────────────────────────────────────────────────────
+# Set initial cash to 1,000,000 as instructed.
+initial_cash = 1000000
+
+print("🌙 [MoonDev] Running initial backtest for GapAdvantage with default parameters...")
+
+bt = Backtest(data, GapAdvantage, cash=initial_cash, commission=.000, exclusive_orders=True)
 stats = bt.run()
-print("\n🌙✨ [STATS] Full statistics:")
+print("🚀 [MoonDev] Initial Backtest Stats:")
 print(stats)
-print("\n🌙✨ [STATS] Strategy parameters:")
+print("🌙 [MoonDev] Strategy details:")
 print(stats._strategy)
 
-# Save initial performance plot to charts directory
+# Save initial performance chart to charts directory.
 strategy_name = "GapAdvantage"
 chart_dir = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/charts"
-os.makedirs(chart_dir, exist_ok=True)
+if not os.path.exists(chart_dir):
+    os.makedirs(chart_dir)
 chart_file = os.path.join(chart_dir, f"{strategy_name}_chart.html")
-print(f"\n🌙✨ [PLOT] Saving initial performance chart to {chart_file}\n")
+print("✨ [MoonDev] Saving initial performance chart to {}...".format(chart_file))
 bt.plot(filename=chart_file, open_browser=False)
 
-# ─── OPTIMIZATION ───────────────────────────────────────────────────
-print("\n🌙✨ [OPTIMIZATION] Starting parameter optimization...\n")
+# ─── OPTIMIZATION ───────────────────────────────────────────────────────────────────
+print("🌙 [MoonDev] Starting parameter optimization for GapAdvantage strategy...")
+
+# Optimize parameters:
+# fast_ma_period: range(7, 12, 1)
+# slow_ma_period: range(18, 23, 1)
+# risk_reward_ratio: using integer values [1, 2, 3]
 optimized_stats = bt.optimize(
-    gap_threshold_bp=range(10, 21, 5),            # e.g., 10, 15, 20 corresponding to 1.0%, 1.5%, 2.0%
-    stop_loss_multiplier=range(2, 5, 1),            # 2, 3, 4
-    take_profit_multiplier=range(3, 6, 1),          # 3, 4, 5
-    risk_percent=range(1, 3, 1),                    # 1% or 2%
+    fast_ma_period=range(7, 12, 1),
+    slow_ma_period=range(18, 23, 1),
+    risk_reward_ratio=[1, 2, 3],
     maximize='Equity Final [$]',
-    constraint=lambda param: param.take_profit_multiplier > param.stop_loss_multiplier
+    constraint=lambda param: param.fast_ma_period < param.slow_ma_period  # fast MA must be below slow MA period
 )
 
-print("\n🌙✨ [OPTIMIZATION] Optimized Statistics:")
+print("🚀 [MoonDev] Optimization complete!")
+print("🌙 [MoonDev] Optimized Stats:")
 print(optimized_stats)
-print("\n🌙✨ [OPTIMIZATION] Optimized strategy parameters:")
+print("✨ [MoonDev] Optimized Strategy Details:")
 print(optimized_stats._strategy)
 
-# Save optimized performance plot to charts directory
-opt_chart_file = os.path.join(chart_dir, f"{strategy_name}_optimized_chart.html")
-print(f"\n🌙✨ [PLOT] Saving optimized performance chart to {opt_chart_file}\n")
-bt.plot(filename=opt_chart_file, open_browser=False)
+# Save optimized performance chart to charts directory.
+chart_file_optimized = os.path.join(chart_dir, f"{strategy_name}_optimized_chart.html")
+print("🌙 [MoonDev] Saving optimized performance chart to {} ...".format(chart_file_optimized))
+bt.plot(filename=chart_file_optimized, open_browser=False)
 
-print("\n🚀🌙✨ [DONE] Backtest and optimization complete. Moon Dev approves! Enjoy trading among the stars!")
-------------------------------------------------------------
-
-Notes:
-• Every indicator calculation uses self.I() and TA‑Lib (or our custom vwap) as required.
-• Column names are cleaned and mapped to the proper case.
-• Position sizing is calculated risk‐based and always converted to an integer number of units.
-• Debug and status prints include lots of Moon Dev themed emojis 🚀🌙✨ for clarity.
-• The optimization step uses ranges rather than lists for parameters.
-• Charts are automatically saved in the specified charts directory.
-
-Happy backtesting and may the Moon Dev magic guide your trades!
+print("🚀 [MoonDev] Backtest and optimization complete! Happy Trading! 🌙✨")

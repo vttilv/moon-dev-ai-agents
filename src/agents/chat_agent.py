@@ -43,7 +43,7 @@ load_dotenv(dotenv_path=env_path)
 
 # Model override settings
 MODEL_TYPE = "groq"  # Using Claude for chat responses
-MODEL_NAME = "llama-3.3-70b-versatile"  # Fast, efficient model
+MODEL_NAME = "mixtral-8x7b-32768"  # Fast, efficient model
 
 # Configuration - All in one place! 🎯
 RESTREAM_CHECK_INTERVAL = 0.1  # Reduce to 100ms for more responsive chat

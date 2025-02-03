@@ -1,34 +1,31 @@
 STRATEGY_NAME: GapAdvantage
 
 STRATEGY_DETAILS:
-The GapAdvantage strategy focuses on volatile stocks with fundamental news, specifically leading percentage gainers and "gappers" that open significantly higher than their previous day's close. The strategy, referred to as "gap and go," looks for imbalances between supply and demand caused by news, low float, and affordability for retail traders.
+
+This strategy, named "GapAdvantage", focuses on volatile stocks with significant percentage gains and fundamental news. The goal is to capture a portion of the large move, even if it's just a "sliver", to achieve meaningful profit.
 
 Key strategy components:
-1. Identify leading percentage gainers and "gappers" in the market.
-2. Look for news, partnerships, or other fundamental catalysts driving price movement.
-3. Focus on stocks with a low float (less than 20 million shares).
-4. Utilize a scanner to find stocks moving up quickly.
-5. Look for an imbalance between supply and demand.
+1. Identify leading percentage gainers and "gappers" (stocks opening higher than the previous day's close)
+2. Look for stocks with fundamental news, such as earnings announcements, partnership deals, or clinical trials
+3. Focus on stocks with a lower price (generally between $2 and $20) and a low float (fewer than 20 million shares)
 
 Entry rules:
-1. Find the first pullback after a gap or breakout.
-2. Look for the first pullback that makes a new high on the five-minute chart.
-3. Prefer entries at or near the volume-weighted average price (VWAP) or moving averages.
-4. Avoid entries following topping tails or extended pullbacks.
+1. Find the first pullback after a gap or breakout, ideally near the volume weighted average price or a strong moving average
+2. Look for the first one-minute candle to make a new high after the pullback
+3. Be cautious with topping tails or extended pullbacks
 
 Exit rules:
-1. Utilize a risk management plan, setting a stop-loss to limit potential losses.
-2. Exit trades once the price action shows signs of reversal or consolidation.
-3. Take partial profits at key resistance levels or after significant price increases.
+1. Set a profit target based on the stock's volatility and the size of the move
+2. Use a trailing stop to protect profits
+3. Be prepared to exit quickly if the stock shows signs of reversing or weakening
 
 Risk management:
-1. Set a stop-loss at a reasonable level to protect capital.
-2. Risk no more than 1-2% of your trading account on any single trade.
-3. Be patient and wait for the right setup before entering a trade.
+1. Trade with a risk-to-reward ratio of at least 1:1
+2. Start with a small position size and gradually increase as confidence and experience grow
+3. Use a simulator for practice before trading with real money
 
 Required indicators:
-1. Volume-weighted average price (VWAP).
-2. Moving averages (e.g., 9-period, 20-period).
-3. A scanner to find leading percentage gainers and "gappers."
+1. Volume weighted average price (VWAP)
+2. Moving averages (e.g., 9-period, 20-period)
 
-This strategy aims to simplify day trading for beginners by focusing on volatile stocks with high potential for significant price movements. By following the GapAdvantage strategy, traders can potentially increase their profitability while minimizing risk.
+This strategy aims to simplify day trading for beginners by focusing on the right type of stocks and dialing in precise entries. It's not an easy strategy, but it can be a good starting point for those looking to minimize risk and maximize potential gains.
