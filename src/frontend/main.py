@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form, BackgroundTasks
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
@@ -26,8 +26,10 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 # Add src directory to Python path
 sys.path.append(str(PROJECT_ROOT / "src"))
 
-# Set up static files and templates
+# Mount the static directory
 app.mount("/static", StaticFiles(directory=str(PROJECT_ROOT / "src/frontend/static")), name="static")
+
+# Set up templates
 templates = Jinja2Templates(directory=str(PROJECT_ROOT / "src/frontend/templates"))
 
 # Required environment variables
@@ -56,12 +58,29 @@ is_processing_complete = False
 # Import after setting up Python path
 from agents.rbi_agent import process_trading_idea
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def home(request: Request):
-    """Render the home page"""
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/agent/{agent_id}")
+async def agent_detail(request: Request, agent_id: str):
+    # In a real app, you'd fetch this data from a database
+    agent = {
+        "name": "Trading Assistant Agent",
+        "description": "Your AI-powered trading companion",
+        "hero_image": "/static/images/agents/trading-assistant.png",
+        "features": [
+            {
+                "title": "Real-time Analysis",
+                "description": "Advanced market analysis in real-time",
+                "image": "/static/images/agents/feature1.png"
+            },
+            # Add more features...
+        ]
+    }
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "title": "Moon Dev's RBI Agent 🌙"}
+        "agent_detail.html", 
+        {"request": request, "agent": agent}
     )
 
 async def process_strategy_background(links: list):
@@ -188,6 +207,18 @@ async def get_results():
         "results": processing_results,
         "is_complete": is_processing_complete
     })
+
+@app.get("/request-agent")
+async def request_agent_form(request: Request):
+    return templates.TemplateResponse("request_agent.html", {"request": request})
+
+@app.get("/submit-agent")
+async def submit_agent_form(request: Request):
+    return templates.TemplateResponse("submit_agent.html", {"request": request})
+
+@app.get("/thank-you")
+async def thank_you(request: Request):
+    return templates.TemplateResponse("thank_you.html", {"request": request})
 
 if __name__ == "__main__":
     import uvicorn

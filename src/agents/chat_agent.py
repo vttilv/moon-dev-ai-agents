@@ -641,7 +641,7 @@ class ChatAgent:
         4. If not negative and no ?, just display the message
         """
         # Add API key warning
-        if any(key_word in question.lower() for key_word in ['api', 'key', 'token', 'secret']):
+        if any(key_word in question.lower() for key_word in ['apixxx', 'keyxxx', 'tokenxxx', 'secretxxx']):
             return None
             
         retries = 0
