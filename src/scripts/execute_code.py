@@ -43,7 +43,7 @@ AI_CHAT_HEIGHT = 1500
 
 # Screenshot area coordinates (top half of screen)
 SCREENSHOT_X = -1933  # Same X as AI chat
-SCREENSHOT_Y = -1014  # Higher up (600 pixels up from AI_CHAT_Y)
+SCREENSHOT_Y = -1614  # Higher up (600 pixels up from AI_CHAT_Y)
 SCREENSHOT_WIDTH = 600  # Wider capture area
 SCREENSHOT_HEIGHT = 1200  # Shorter but captures top area
 
