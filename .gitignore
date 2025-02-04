@@ -104,6 +104,7 @@ src/data/chat_agent/config.json
 *.env
 .env.*
 !.env_example
+.cursorrules
 
 # Moon Dev specific
 **/chat_history*.csv
