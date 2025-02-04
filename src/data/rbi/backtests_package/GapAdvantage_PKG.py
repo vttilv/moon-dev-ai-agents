@@ -1,80 +1,82 @@
-Here's the fixed code with no usage of backtesting.lib:
+Here's the fixed code with all the backtesting.lib imports and functions replaced:
 
 ```python
 #!/usr/bin/env python3
 """
-Moon Dev's Backtest AI 🌙 🚀
-
-Backtesting implementation for the GapAdvantage strategy.
-This strategy focuses on capturing a sliver of a large move after a gap/breakout.
-Please ensure you have installed the required packages:
-    pip install pandas numpy TA-Lib pandas_ta
+Moon Dev's Backtest AI 🌙 - GapAdvantage Strategy Backtesting Implementation
+This strategy focuses on volatile stocks (or assets) with a gap‐and‐go setup.
+It enters when the price pulls back to key support levels such as VWAP and moving averages,
+and exits if the price shows early signs of weakness.
+Enjoy the Moon Dev debug vibes! 🌙✨🚀
 """
 
-import os
-import numpy as np
+# 1. Imports
 import pandas as pd
+import numpy as np
 import talib
-import pandas_ta as pta  # may be used in helper functions if needed
+import pandas_ta as pta  # for additional indicators if needed
+from backtesting import Backtest, Strategy
 
-# ─── UTILITY FUNCTIONS FOR INDICATORS ────────────────────────────────────────────────────
-def VWAP(high, low, close, volume):
-    """
-    Calculate the Volume Weighted Average Price (VWAP).
+# --------------
+# Custom Indicator Functions
+# --------------
 
-    VWAP = cumulative((typical price × volume))/cumulative(volume)
-    Typical Price = (High + Low + Close)/3
+def custom_vwap(high, low, close, volume):
     """
-    typical = (high + low + close) / 3.0
+    Calculate cumulative Volume-Weighted Average Price (VWAP).
+    VWAP = cumulative(sum(Typical Price * Volume)) / cumulative(sum(Volume))
+    Typical Price = (High + Low + Close) / 3
+    """
+    tp = (high + low + close) / 3.0
+    cum_vp = np.cumsum(tp * volume)
     cum_vol = np.cumsum(volume)
     # Avoid division by zero
-    cum_vol[cum_vol == 0] = 1e-10
-    vwap = np.cumsum(typical * volume) / cum_vol
+    vwap = np.where(cum_vol != 0, cum_vp / cum_vol, 0)
     return vwap
 
-# ─── STRATEGY CLASS DEFINITION ─────────────────────────────────────────────────────
-class GapAdvantage:
-    # Optimization parameters
-    fast_ma_period = 9          # Moving average period for entry signal (default 9)
-    slow_ma_period = 20         # Moving average period for trend (default 20)
-    risk_reward_ratio = 1       # risk-reward ratio; must be at least 1 (default 1)
+# --------------
+# Strategy Class
+# --------------
+
+class GapAdvantage(Strategy):
+    # Risk parameters (can be adjusted)
+    risk_pct = 0.01           # risk 1% of equity per trade
+    stop_loss_pct = 0.02      # 2% stop loss
+    take_profit_pct = 0.03    # 3% take profit
     
-    # Fixed risk percentage per trade (percentage of equity to risk)
-    risk_pct = 0.01             # 1% risk per trade
-
-    def __init__(self, data):
-        self.data = data
-        self.fast_ma = None
-        self.slow_ma = None
-        self.vwap = None
-        self.recent_high = None
+    def init(self):
+        # Indicators using the self.I() wrapper for proper caching
+        # Simple Moving Averages using talib
+        self.sma9 = self.I(talib.SMA, self.data.Close, timeperiod=9)
+        self.sma50 = self.I(talib.SMA, self.data.Close, timeperiod=50)
+        
+        # VWAP indicator using a custom function
+        self.vwap = self.I(custom_vwap, self.data.High, self.data.Low, self.data.Close, self.data.Volume)
+        
+        # Debug prints at initialization
+        print("🌙✨ [INIT] Indicators loaded: SMA9, SMA50, and VWAP calculated via custom_vwap()!")
+        
+        # To store trade-dependent levels
         self.entry_price = None
-        self.current_stop = None
-        self.trailing_stop = None
+        self.sl = None
+        self.tp = None
 
-        self.calculate_indicators()
-
-    def calculate_indicators(self):
-        # Debug print: initialize indicators 🌙✨
-        print("🌙 [MoonDev Debug] Initializing GapAdvantage Strategy indicators...")
-
-        # Calculate the fast and slow moving averages using TA-Lib's SMA.
-        self.fast_ma = talib.SMA(self.data.Close.values, timeperiod=self.fast_ma_period)
-        self.slow_ma = talib.SMA(self.data.Close.values, timeperiod=self.slow_ma_period)
-        
-        # Calculate VWAP indicator using our custom function.
-        self.vwap = VWAP(self.data.High.values, self.data.Low.values, self.data.Close.values, self.data.Volume.values)
-        
-        # For a recent swing high used for entry check, we use a 5-period highest high.
-        self.recent_high = talib.MAX(self.data.High.values, timeperiod=5)
-
-        print("🚀 [MoonDev Debug] Indicators loaded: fast MA (period={}), slow MA (period={}), VWAP.".format(
-            self.fast_ma_period, self.slow_ma_period))
-
-    def should_enter_position(self):
-        # Get current price information
+    def next(self):
         price = self.data.Close[-1]
-        high = self.data.High[-1]
+        current_vwap = self.vwap[-1]
+        current_sma9 = self.sma9[-1]
         
-        # Moon Dev themed debug prints
-        print("🌙 [MoonDev] New candle: Price = {:.2f}, High = {:.2f}, Low = {:.2f}
+        # Debug: Print current price and indicator values
+        print(f"🌙🚀 [NEXT] Price: {price:.2f}, VWAP: {current_vwap:.2f}, SMA9: {current_sma9:.2f}")
+        
+        # Check if we have an open position
+        if not self.position:
+            # Entry logic:
+            # Condition: price has just crossed above VWAP (pullback bounce) after being below.
+            # (i.e. yesterday's close was below vwap and today’s close is above vwap)
+            if len(self.data.Close) >= 2 and self.data.Close[-2] < self.vwap[-2] and price > current_vwap:
+                self.entry_price = price
+                # Set stop loss and take profit levels based on entry price
+                self.sl = self.entry_price * (1 - self.stop_loss_pct)
+                self.tp = self.entry_price * (1 + self.take_profit_pct)
+                risk_per_unit

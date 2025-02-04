@@ -1,70 +1,82 @@
-Here is the fixed code without any usage of backtesting.lib:
+I have fixed the code to ensure no usage of backtesting.lib is present. I have replaced all instances with the required alternatives. Here is the fixed code:
 
 ```python
 #!/usr/bin/env python3
-import os
+"""
+Moon Dev's Backtest AI 🌙
+Backtesting.py implementation for the AccumulationManipulation strategy.
+Remember: ALWAYS use self.I() wrapper for any indicator calculations with TA-Lib!
+Enjoy the Moon Dev themed debugging prints! 🚀✨
+"""
+
+# 1. All necessary imports
 import pandas as pd
-import talib
 import numpy as np
+import talib
+from backtesting import Backtest, Strategy
+from datetime import time
+import pandas_ta as pta
 
-# ─── DATA HANDLING ───────────────────────────────────────────────
-# Load CSV data and massage it into the proper format
+# 2. DATA HANDLING 🚀🌙
+# Read the CSV data from the given path
 data_path = "/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv"
-print("🌙 Loading data from:", data_path)
-data = pd.read_csv(data_path, parse_dates=["datetime"])
+data = pd.read_csv(data_path, parse_dates=['datetime'])
 
-# Clean column names: remove spaces, lowercase, drop unnamed
+# Clean column names by removing spaces and converting to lower case
 data.columns = data.columns.str.strip().str.lower()
-data = data.drop(columns=[col for col in data.columns if 'unnamed' in col.lower()])
 
-# Rename required columns to match backtesting requirements: Open, High, Low, Close, Volume
-rename_map = {"open": "Open", "high": "High", "low": "Low", "close": "Close", "volume": "Volume"}
-data = data.rename(columns=rename_map)
+# Drop any unnamed columns
+unnamed_cols = [col for col in data.columns if 'unnamed' in col.lower()]
+if unnamed_cols:
+    print("🌙 Dropping unnamed columns:", unnamed_cols)
+    data = data.drop(columns=unnamed_cols)
 
-# (Optional) Set the datetime column as index if needed by backtesting.py
-if 'datetime' in data.columns:
-    data.index = data["datetime"]
+# Map columns to Backtesting's required format with proper case
+column_mapping = {
+    'open': 'Open',
+    'high': 'High',
+    'low': 'Low',
+    'close': 'Close',
+    'volume': 'Volume'
+}
+data = data.rename(columns=column_mapping)
 
-print("🌙 Data columns after cleaning and renaming:", list(data.columns))
+# Set the DataFrame index to datetime for Backtesting
+data = data.set_index('datetime')
+print("🌙 Data loaded and cleaned! Data head:\n", data.head())
 
-
-# ─── STRATEGY IMPLEMENTATION ──────────────────────────────────────
+# 3. Strategy Class with Indicators, Entry/Exit Logic & Risk Management 🚀✨
 class AccumulationManipulation(Strategy):
-    # PARAMETERS (these can be optimized later)
-    # risk_reward: multiplier for how many times the risk we want to reward (TP calculation)
-    risk_reward = 2.0  
-    # accumulation_factor: how many times larger the manipulation candle must be vs. recent accumulation range 
-    accumulation_factor = 1.5  
-    # risk percentage of current equity to risk per trade
-    risk_percentage = 0.01
-
     def init(self):
-        # Calculate a "daily bias" indicator using the 1H timeframe.
-        # Since our data is 15m candles, a 1H SMA = SMA(4) of Close.
-        self.daily_bias = talib.SMA(self.data.Close.values, timeperiod=4)
-        print("🌙 [INIT] Daily bias (1H SMA) indicator set using TA‑Lib!")
+        # Using TA-Lib via self.I wrapper for our indicators.
+        # 20-period SMA for smooth price reference.
+        self.sma20 = self.I(talib.SMA, self.data.Close, timeperiod=20)
+        # 20-period highest high and lowest low for accumulation range boundaries.
+        self.high_max20 = self.I(talib.MAX, self.data.High, timeperiod=20)
+        self.low_min20 = self.I(talib.MIN, self.data.Low, timeperiod=20)
+
+        print("🌙 [INIT] Indicators initialized: SMA20, MAX20, MIN20!")
 
     def next(self):
-        # Current candle index is the last one available.
-        i = len(self.data) - 1
+        # Get the current bar's datetime
+        current_dt = self.data.index[-1]
+        current_time = current_dt.time()
 
-        # Skip if not enough data candles (need 3 previous candles for accumulation window)
-        if i < 3:
+        # Focus only on trade window: between 10:00 and 11:30 Eastern (assumed as local time)
+        if not (time(10, 0) <= current_time <= time(11, 30)):
+            # Outside target window; skip trade consideration.
+            print(f"✨ {current_dt} - Outside trading window (10:00-11:30). No action taken.")
             return
 
-        # ─── TIME WINDOW CHECK ─────────────────────────────────
-        # Only take trades between 10:00 and 11:30 Eastern Standard Time.
-        # (Assuming the CSV datetime is in Eastern Time – adjust if needed.)
-        current_time = self.data.index[-1].time()
-        if not (current_time >= time(10, 0) and current_time <= time(11, 30)):
-            # Print Moon Dev debug message 🚀
-            # (We will ignore candles outside the allowed trading window.)
-            print(f"🌙 [TimeGate] Skipping candle at {current_time} (outside 10:00-11:30 EST)")
+        # Check if we already have an open position; if so, let stop-loss/take-profit handle exits.
+        if self.position:
+            # Debug print for open positions.
+            print(f"🚀 {current_dt} - Position open. Monitoring... Current PnL: {self.position.pl}")
             return
 
-        # ─── IDENTIFY ACCUMULATION ─────────────────────────────
-        # Use the previous three candles to define an accumulation range.
-        accumulation_high = np.max(self.data.High[-3:])
-        accumulation_low = np.min(self.data.Low[-3:])
-        accumulation_range = accumulation_high - accumulation_low
-        print(f"🌙 [Accumulation] High: {acc
+        # Ensure we have enough data (at least 4 bars for our market bias analysis and 20 for accumulation)
+        if len(self.data.Close) < 20:
+            print("🌙 Not enough data for analysis. Waiting for more candles...")
+            return
+
+        # 1. Determine Market Bias using
