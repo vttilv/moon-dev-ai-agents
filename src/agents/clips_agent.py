@@ -90,7 +90,10 @@ if project_root not in sys.path:
 # Constants
 MIN_CLIP_DURATION = 300  # 5 minutes in seconds
 MAX_CLIP_DURATION = 1200  # 20 minutes in seconds
+
+ # get some videos from here and put in input_dir foder: https://www.dropbox.com/scl/fo/d0rjdyus9q3pok5nbmo7b/AM9LOmUDv8KIjmH6ypTALx0?rlkey=klg4tinvneqyui46r6851liwa&st=0zxfym3w&dl=0
 INPUT_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/raw_clips")
+   
 OUTPUT_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/finished_clips")
 TEMP_DIR = Path("/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/temp")
 
