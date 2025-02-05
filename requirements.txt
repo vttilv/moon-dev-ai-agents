@@ -19,4 +19,6 @@ pillow>=10.2.0
 webdriver-manager>=4.0.1
 backtesting>=0.3.3
 TA-Lib>=0.4.24
+moviepy>=1.0.3  # Moon Dev's video processing magic ✨
+tqdm>=4.66.1  # Progress bars for Moon Dev's sanity 🎯
 # Add any other dependencies your agents need

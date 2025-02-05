@@ -99,6 +99,8 @@ src/audio
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
 
+/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/raw_clips
+
 # Project specific
 src/data/chat_agent/chat_history.csv
 src/data/chat_agent/config.json
