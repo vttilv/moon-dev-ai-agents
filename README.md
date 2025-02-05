@@ -84,10 +84,12 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 - video agent (`video_agent.py`): takes in text to create videos by creating audio snippets using elevenlabs and combining with raw_video footage
 - new or top tokens (`new_or_top_agent.py`): an agent that looks at the new tokens and the top tokens from coin gecko api
 - chat agent (`chat_agent`): an agent that monitors youtube live stream chat, moderates & responds to known questions. absolute fire.
+- clips agent (`clips_agent`): an agent that helps clip long videos into shorter ones so you can upload to your youtube and get paid more info is in the code notes and here: https://discord.gg/XAw8US9aHT
 
 
 ### Shipped Features 📦
 
+- [x] 2/5 - clips agent to make money completed by clipping my streams into short digestible videos /clips_agent.py and you can see full training here: https://discord.gg/XAw8US9aHT
 - [x] 2/4 - code running agent is complete and put in the agents folder
 - [x] 2/3 - self executing now works, game changer
 - [x] 2/1 - working on getting a self executing ai agent to work with a debugger ai to be able to autonomosly improve my code and trading backtests
