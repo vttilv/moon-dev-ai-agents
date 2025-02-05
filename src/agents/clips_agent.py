@@ -48,6 +48,15 @@ Where do you get the videos from?
 1. this dropbox has a bunch of my videos that i will upload to daily: https://www.dropbox.com/scl/fo/d0rjdyus9q3pok5nbmo7b/AM9LOmUDv8KIjmH6ypTALx0?rlkey=klg4tinvneqyui46r6851liwa&st=0zxfym3w&dl=0
 2. you have permission to download any of my youtube videos: https://www.youtube.com/@moondevonyt/videos
 
+how do i clip the videos?
+1. download capcut: https://www.capcut.com/
+2. find the interesting parts of the video and make a 5 min - 2 hour clip of it
+3. make an interesting thumbnail & title for the clip (you can use my thumbnails if needed, just google how to download)
+4. post on youtube
+5. when you hit 10,000 views email your link and stats to moondevonyt@gmail.com to get paid
 
+here is another training video, the only difference is that we only accept long youtube videos now. the below training is helpful though.
 
+training video: https://www.youtube.com/watch?v=nqWax0EPkcs
 '''
+
