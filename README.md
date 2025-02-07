@@ -67,6 +67,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 2/7 - created a phone call agent that can be used for customer support, onboarding or sales with a twilio number
 - [x] 2/6 - added ollama to allow for local deepseek r1, gema and llama 3.2 and any other ollama or hugging face model
 - [x] 2/5 - clips agent to make money completed by clipping my streams into short digestible videos /clips_agent.py and you can see full training here: https://discord.gg/XAw8US9aHT
 - [x] 2/4 - code running agent is complete and put in the agents folder
