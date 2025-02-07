@@ -126,3 +126,6 @@ src/data/code_runner/screenshotssrc/frontend/
 src/data/videos/finished_clips/
 src/data/videos/temp/
 src/data/phone_agent/unknown_questions.csv
+src/data/videos/raw_vids/*.mov
+src/data/videos/*.mp4
+src/data/videos/youtube_materials/**/*.mp3
