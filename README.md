@@ -31,8 +31,9 @@ feel free to join our discord if you beleive ai agents will be integrated into t
 - twitter agent (`tweet_agent.py`): takes in text and creates tweets using deepseek or other models
 - video agent (`video_agent.py`): takes in text to create videos by creating audio snippets using elevenlabs and combining with raw_video footage
 - new or top tokens (`new_or_top_agent.py`): an agent that looks at the new tokens and the top tokens from coin gecko api
-- chat agent (`chat_agent`): an agent that monitors youtube live stream chat, moderates & responds to known questions. absolute fire.
-- clips agent (`clips_agent`): an agent that helps clip long videos into shorter ones so you can upload to your youtube and get paid more info is in the code notes and here: https://discord.gg/XAw8US9aHT
+- chat agent (`chat_agent.py`): an agent that monitors youtube live stream chat, moderates & responds to known questions. absolute fire.
+- clips agent (`clips_agent.py`): an agent that helps clip long videos into shorter ones so you can upload to your youtube and get paid more info is in the code notes and here: https://discord.gg/XAw8US9aHT
+- phone agent (`phone_agent.py`): an ai agent that can take phone calls for you
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
