@@ -22,4 +22,9 @@ TA-Lib>=0.4.24
 moviepy>=1.0.3  # Moon Dev's video processing magic ✨
 tqdm>=4.66.1  # Progress bars for Moon Dev's sanity 🎯
 yt-dlp>=2024.3.10  # Moon Dev's YouTube downloader 🎥
+sounddevice>=0.4.6  # Moon Dev's audio recording 🎤
+wave>=0.0.2  # Moon Dev's audio file handling 🌊
+httpx>=0.27.0  # Moon Dev's async HTTP client 🚀
+numpy>=1.24.0  # Moon Dev's numerical processing 🔢
+langdetect>=1.0.9  # Moon Dev's language detection 🌐
 # Add any other dependencies your agents need
