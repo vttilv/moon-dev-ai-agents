@@ -37,6 +37,7 @@ PAST_TOKENS_TO_SHOW = 20  # Number of past token launches to display
 CHECK_INTERVAL = 10  # Seconds between each check for new launches
 DISPLAY_DELAY = 0.5  # Seconds between displaying each token
 ANIMATION_DURATION = 10  # Seconds to show attention-grabbing animation
+AUTO_OPEN_BROWSER = False  # Set to True to automatically open new tokens in browser
 EXCLUDE_PATTERNS = ['So11111111111111111111111111111111111111112']  # Exclude the SOLE token pattern
 BASE_URL = "http://api.moondev.com:8000"
 SOUND_ENABLED = True  # Set to True to enable sound effects, False to disable them
@@ -162,6 +163,15 @@ class TokenScanner:
             
         print(f"\n{colored(f'{random_emoji} NEW TOKEN FOUND', 'white', random_bg)} {time_str}")
         print(f"{birdeye_link}")
+        
+        # Auto-open in browser if enabled
+        if AUTO_OPEN_BROWSER:
+            try:
+                import webbrowser
+                webbrowser.open(birdeye_link)
+            except Exception:
+                pass
+                
         time.sleep(DISPLAY_DELAY)
         
     def show_past_tokens(self):
@@ -211,6 +221,14 @@ class TokenScanner:
             
         print(f"\n{colored(f'{random_emoji} NEW TOKEN FOUND', 'white', random_bg)} {time_str}")
         print(f"{birdeye_link}")
+        
+        # Auto-open in browser if enabled
+        if AUTO_OPEN_BROWSER:
+            try:
+                import webbrowser
+                webbrowser.open(birdeye_link)
+            except Exception:
+                pass
         
         # Play sound first, then do animation
         self.play_sound()
