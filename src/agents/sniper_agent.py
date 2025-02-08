@@ -1,6 +1,9 @@
 '''
 🌙 Moon Dev's Token Scanner - Built with love by Moon Dev 🚀
 Watches for new Solana token launches and displays them with fun animations!
+
+
+- it would be dope to have agents analuzing the launches of each day continously tho, so its like looking at the top 20 to see if they change
 '''
 
 import os

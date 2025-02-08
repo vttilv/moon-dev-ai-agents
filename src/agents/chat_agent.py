@@ -49,7 +49,7 @@ MODEL_NAME = "mixtral-8x7b-32768"  # Fast, efficient model llama-3.1-8b-instant
 RESTREAM_CHECK_INTERVAL = 0.1  # Reduce to 100ms for more responsive chat
 CONFIDENCE_THRESHOLD = 0.8
 MAX_RETRIES = 3
-MAX_RESPONSE_TOKENS = 100  # Increase to allow longer responses
+MAX_RESPONSE_TOKENS = 30  # Increase to allow longer responses
 CHAT_MEMORY_SIZE = 30
 MIN_CHARS_FOR_RESPONSE = 3
 DEFAULT_INITIAL_CHATS = 10
@@ -124,6 +124,8 @@ Frequently Asked Questions
 * can i pay for the bootcamp in crypto?yes, if you are looking to sign up for the lifetime package. unfortunately, there is no way to collect subscriptions in crypto so we do lifetime only. you can email moon@algotradecamp.com for the address to send crypto to set up your bootcamp account.
 * what is the thing you record your voice for text? what is the voice to text software yo uuse? its called flow pro it allows me to turn my voice to text to double my words per minute
 * whats your github? @moondevonyt
+
+ONLY RESPOND BASED IF THE ANSWER IS IN THE KNOWLEDGE BASE OR COMMMON KNOWLEDGE. OTHERWISE JUST SAY: ASK MOON DEV
 User message to respond to with the above knowledge base: {question}
 """
 
