@@ -32,7 +32,7 @@ from datetime import datetime
 import random
 
 # Testing mode flag - set to True to test in terminal without Twilio
-TESTING_MODE = False
+TESTING_MODE = True
 
 # Add project root to Python path for imports
 project_root = str(Path(__file__).parent.parent.parent)
@@ -40,15 +40,23 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 # Load environment variables
-load_dotenv()
-
-# Initialize OpenAI client with correct env var name
-openai.api_key = os.getenv("OPENAI_KEY")
-if not openai.api_key:
-    raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
+if not TESTING_MODE:
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    # Initialize OpenAI client with correct env var name
+    openai.api_key = os.getenv("OPENAI_KEY")
+    if not openai.api_key:
+        raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
+else:
+    # In testing mode, we can set a default model or use environment variables if available
+    openai.api_key = os.getenv("OPENAI_KEY", "your-api-key-here")
 
 # Initialize Flask app (only if not testing)
-app = None if TESTING_MODE else Flask(__name__)
+if not TESTING_MODE:
+    app = Flask(__name__)
+else:
+    app = None
 
 # Model settings
 MODEL_NAME = "gpt-4o-mini"  # Using latest GPT-4 Turbo
@@ -65,11 +73,11 @@ MIN_PHRASE_LENGTH = 0.3  # Minimum length of a valid phrase
 MAX_PHRASE_GAP = 2.0  # Maximum gap between phrases to combine them
 
 # Audio level settings
-VOLUME_THRESHOLD = 0.05  # Base threshold for detecting speech (lower = more sensitive)
-SILENCE_THRESHOLD = VOLUME_THRESHOLD * 1.6  # Threshold for silence detection
-PEAK_THRESHOLD = VOLUME_THRESHOLD * 5.0  # Threshold for loud speech
-MIN_VOLUME_TIME = 0.1  # Minimum time above threshold to count as speech
-BACKGROUND_NOISE_FLOOR = 0.02  # Minimum volume to consider as background noise
+VOLUME_THRESHOLD = 0.01  # Lowered from 0.05 to be more sensitive
+SILENCE_THRESHOLD = VOLUME_THRESHOLD * 1.2  # Lowered multiplier
+PEAK_THRESHOLD = VOLUME_THRESHOLD * 3.0  # Lowered multiplier
+MIN_VOLUME_TIME = 0.05  # Lowered from 0.1
+BACKGROUND_NOISE_FLOOR = 0.005  # Lowered from 0.02
 
 # Audio recording settings
 SAMPLE_RATE = 16000
@@ -153,15 +161,77 @@ class VoiceRecorder:
         
     def start_recording(self):
         """Start recording audio"""
-        self.is_recording = True
-        self.stream = sd.InputStream(
-            samplerate=SAMPLE_RATE,
-            channels=CHANNELS,
-            callback=self.audio_callback,
-            blocksize=CHUNK_SIZE
-        )
-        self.stream.start()
-        
+        try:
+            # First test if we can access the microphone
+            cprint("🎤 Testing microphone access...", "cyan")
+            
+            # List available audio devices
+            devices = sd.query_devices()
+            cprint(f"🎛️ Available audio devices:", "cyan")
+            default_input = None
+            for i, device in enumerate(devices):
+                cprint(f"  {i}: {device['name']} (inputs: {device['max_input_channels']})", "cyan")
+                if device['max_input_channels'] > 0:
+                    if default_input is None:
+                        default_input = i
+                    if 'default' in device['name'].lower() or 'microphone' in device['name'].lower():
+                        default_input = i
+            
+            if default_input is None:
+                raise Exception("No input devices found!")
+                
+            # Try to find default input device
+            try:
+                default_device = sd.query_devices(kind='input')
+                device_id = default_device['index'] if 'index' in default_device else default_input
+                cprint(f"🎤 Using input device: {devices[device_id]['name']}", "green")
+            except Exception as e:
+                cprint(f"⚠️ Using fallback device {default_input}: {e}", "yellow")
+                device_id = default_input
+            
+            # Test microphone access with explicit device
+            test_stream = sd.InputStream(
+                device=device_id,
+                samplerate=SAMPLE_RATE,
+                channels=CHANNELS,
+                callback=lambda *args: None,
+                blocksize=CHUNK_SIZE
+            )
+            test_stream.start()
+            test_stream.stop()
+            test_stream.close()
+            cprint("✅ Microphone access granted!", "green")
+
+            # Start the actual recording stream with more sensitive settings
+            self.is_recording = True
+            self.stream = sd.InputStream(
+                device=device_id,
+                samplerate=SAMPLE_RATE,
+                channels=CHANNELS,
+                callback=self.audio_callback,
+                blocksize=CHUNK_SIZE,
+                latency='low'  # Lower latency for better responsiveness
+            )
+            self.stream.start()
+            cprint("🎙️ Recording started!", "green")
+            
+            # Print current audio settings
+            cprint(f"🔊 Audio settings:", "cyan")
+            cprint(f"  Device: {devices[device_id]['name']}", "cyan")
+            cprint(f"  Sample rate: {SAMPLE_RATE} Hz", "cyan")
+            cprint(f"  Channels: {CHANNELS}", "cyan")
+            cprint(f"  Chunk size: {CHUNK_SIZE}", "cyan")
+            cprint(f"  Volume threshold: {VOLUME_THRESHOLD}", "cyan")
+            
+            # Test the input stream with some initial readings
+            cprint("\n📊 Testing input levels...", "cyan")
+            time.sleep(0.5)  # Wait for stream to stabilize
+            
+        except Exception as e:
+            cprint("❌ Could not access microphone. Please allow microphone access in your browser.", "red")
+            cprint(f"Error: {str(e)}", "red")
+            raise Exception("Microphone access denied. Please allow access and try again.")
+
     def stop_recording(self):
         """Stop recording audio"""
         self.is_recording = False
@@ -180,6 +250,7 @@ class VoiceRecorder:
             
         # Get volume level with better noise handling
         volume_norm = np.linalg.norm(indata) / np.sqrt(frames)
+        max_volume = np.max(np.abs(indata))
         
         # Apply noise floor
         if volume_norm < BACKGROUND_NOISE_FLOOR:
@@ -187,14 +258,23 @@ class VoiceRecorder:
         
         current_time = time.currentTime
         
-        # Debug volume levels occasionally
-        if random.random() < 0.01:  # Print debug info ~1% of the time
-            cprint(f"🎤 Volume: {volume_norm:.3f}", "cyan")
+        # Debug volume levels more frequently during initial setup
+        if not hasattr(self, 'debug_count'):
+            self.debug_count = 0
+        self.debug_count += 1
+        
+        # Print volume levels more frequently at first, then reduce frequency
+        if self.debug_count < 100 or random.random() < 0.01:
+            cprint(f"🎤 Volume: {volume_norm:.4f} (max: {max_volume:.4f}, threshold: {VOLUME_THRESHOLD})", "cyan")
+            if volume_norm == 0:
+                cprint("⚠️ No audio input detected. Please check your microphone.", "yellow")
+            elif volume_norm < VOLUME_THRESHOLD:
+                cprint("ℹ️ Volume too low. Please speak louder or adjust microphone.", "cyan")
         
         # Start or continue recording if volume above threshold
-        if volume_norm > VOLUME_THRESHOLD:
+        if volume_norm > VOLUME_THRESHOLD or max_volume > VOLUME_THRESHOLD:
             if not self.recording_start:
-                cprint("🎙️ Speech detected!", "cyan")
+                cprint(f"🎙️ Speech detected! Volume: {volume_norm:.4f} (max: {max_volume:.4f})", "green")
                 self.recording_start = current_time
                 self.last_speech_end = None
             self.current_audio.append(indata.copy())
@@ -418,15 +498,15 @@ def is_question_in_knowledge_base(question, knowledge_base):
     return (terms_found / len(question_terms)) >= 0.7
 
 async def test_conversation():
-    """Run a test conversation in the terminal with continuous voice interaction"""
+    """Run a test conversation with continuous voice interaction"""
     try:
         cprint("\n🎯 TESTING MODE ACTIVE", "yellow")
         cprint("═" * 50, "yellow")
         
         # Welcome message
         cprint("\n" + "═" * 50, "green")
-        cprint("🌟 Starting Moon Dev's AI Phone Call! 🌙", "green")
-        cprint("Press Ctrl+C to end the call", "yellow")
+        cprint("🌟 Starting Moon Dev's AI Voice Assistant! 🌙", "green")
+        cprint("Press Ctrl+C to end the conversation", "yellow")
         cprint("═" * 50, "green")
         
         # Initial greeting
@@ -459,95 +539,87 @@ Key guidelines:
         
         cprint("\n🎤 Listening...", "cyan")
         
-        try:
-            while True:
-                if not recorder.audio_queue.empty():
-                    audio_data = recorder.audio_queue.get()
+        while True:
+            if not recorder.audio_queue.empty():
+                audio_data = recorder.audio_queue.get()
+                
+                # Process audio
+                transcript = await process_audio_chunk(audio_data)
+                if transcript.strip():
+                    cprint(f"\n💭 You said: {transcript}", "cyan")
                     
-                    # Process audio
-                    transcript = await process_audio_chunk(audio_data)
-                    if transcript.strip():
-                        cprint(f"\n💭 You said: {transcript}", "cyan")
+                    # Check if this needs knowledge base verification
+                    needs_verification = needs_knowledge_base(transcript)
+                    
+                    # If it needs verification, check knowledge base
+                    if needs_verification:
+                        can_answer = is_question_in_knowledge_base(transcript, KNOWLEDGE_BASE)
+                    else:
+                        can_answer = True  # Let AI use its general knowledge
+                    
+                    if not can_answer:
+                        # Log the unknown question
+                        log_unknown_question(transcript)
                         
-                        # Check if this needs knowledge base verification
-                        needs_verification = needs_knowledge_base(transcript)
+                        # Prepare "I don't know" response
+                        unknown_response = "I apologize, but I'm not sure about that. Please email moon@algotradecamp.com and we'll get that answered ASAP! 🌙✉️"
+                        cprint("\n🤖 AI: " + unknown_response, "yellow")
                         
-                        # If it needs verification, check knowledge base
-                        if needs_verification:
-                            can_answer = is_question_in_knowledge_base(transcript, KNOWLEDGE_BASE)
-                        else:
-                            can_answer = True  # Let AI use its general knowledge
-                        
-                        if not can_answer:
-                            # Log the unknown question
-                            log_unknown_question(transcript)
-                            
-                            # Prepare "I don't know" response
-                            unknown_response = "I apologize, but I'm not sure about that. Please email moon@algotradecamp.com and we'll get that answered ASAP! 🌙✉️"
-                            cprint("\n🤖 AI: " + unknown_response, "yellow")
-                            
-                            # Play response and add to history
-                            if unknown_response.strip():
-                                success = await play_audio_response(unknown_response)
-                                if success:
-                                    recorder.processing = False
-                                    cprint("\n🎤 Listening...", "cyan")
-                            
-                            conversation_history.append({"role": "assistant", "content": unknown_response})
-                            continue
-                        
-                        # Detect language
-                        try:
-                            lang = langdetect.detect(transcript)
-                            if lang != 'en':
-                                cprint("\n⚠️ Non-English input detected. Please speak in English.", "yellow")
-                                await play_audio_response("I can only understand English. Please speak in English.")
-                                cprint("\n🎤 Listening...", "cyan")
-                                continue
-                        except:
-                            pass  # Continue if language detection fails
-                        
-                        # Add to conversation history
-                        conversation_history.append({"role": "user", "content": transcript})
-                        
-                        # Get AI response with streaming
-                        cprint("\n🤖 AI:", "green")
-                        full_response = ""
-                        
-                        stream = openai.chat.completions.create(
-                            model=MODEL_NAME,
-                            messages=conversation_history,
-                            temperature=TEMPERATURE,
-                            max_tokens=MAX_TOKENS,
-                            stream=True
-                        )
-                        
-                        # Collect the full response
-                        for chunk in stream:
-                            if chunk.choices[0].delta.content:
-                                content = chunk.choices[0].delta.content
-                                print(content, end="", flush=True)
-                                full_response += content
-                        
-                        print()  # New line after response
-                        
-                        # Play the response and resume listening near the end
-                        if full_response.strip():
-                            success = await play_audio_response(full_response)
+                        # Play response and add to history
+                        if unknown_response.strip():
+                            success = await play_audio_response(unknown_response)
                             if success:
-                                # Resume audio processing before speech finishes
                                 recorder.processing = False
                                 cprint("\n🎤 Listening...", "cyan")
                         
-                        # Add AI response to history
-                        conversation_history.append({"role": "assistant", "content": full_response})
-                
-                await asyncio.sleep(0.1)  # Small delay to prevent CPU hogging
-                
-        except KeyboardInterrupt:
-            recorder.stop_recording()
-            cprint("\n\n👋 Call ended. Moon Dev's AI signing off! 🌙", "yellow")
+                        conversation_history.append({"role": "assistant", "content": unknown_response})
+                        continue
+                    
+                    # Detect language
+                    try:
+                        lang = langdetect.detect(transcript)
+                        if lang != 'en':
+                            cprint("\n⚠️ Non-English input detected. Please speak in English.", "yellow")
+                            await play_audio_response("I can only understand English. Please speak in English.")
+                            cprint("\n🎤 Listening...", "cyan")
+                            continue
+                    except:
+                        pass  # Continue if language detection fails
+                    
+                    # Add to conversation history
+                    conversation_history.append({"role": "user", "content": transcript})
+                    
+                    # Get AI response
+                    cprint("\n🤖 AI:", "green")
+                    
+                    response = openai.chat.completions.create(
+                        model=MODEL_NAME,
+                        messages=conversation_history,
+                        temperature=TEMPERATURE,
+                        max_tokens=MAX_TOKENS
+                    )
+                    
+                    full_response = response.choices[0].message.content
+                    cprint(full_response, "green")
+                    
+                    # Play the response and resume listening near the end
+                    if full_response.strip():
+                        success = await play_audio_response(full_response)
+                        if success:
+                            # Resume audio processing before speech finishes
+                            recorder.processing = False
+                            cprint("\n🎤 Listening...", "cyan")
+                    
+                    # Add AI response to history
+                    conversation_history.append({"role": "assistant", "content": full_response})
             
+            await asyncio.sleep(0.1)  # Small delay to prevent CPU hogging
+            
+    except KeyboardInterrupt:
+        if 'recorder' in locals():
+            recorder.stop_recording()
+        cprint("\n\n👋 Call ended. Moon Dev's AI signing off! 🌙", "yellow")
+        
     except Exception as e:
         cprint(f"\n❌ Error in conversation: {str(e)}", "red")
         if hasattr(e, '__traceback__'):
@@ -640,16 +712,68 @@ if not TESTING_MODE:
         cprint(f"📞 Call Status: {status}", "cyan")
         return '', 200
 
+async def process_message(message):
+    """Process a message and return AI response - used by both web and voice interfaces"""
+    try:
+        # Check if this needs knowledge base verification
+        needs_verification = needs_knowledge_base(message)
+        
+        # If it needs verification, check knowledge base
+        if needs_verification:
+            can_answer = is_question_in_knowledge_base(message, KNOWLEDGE_BASE)
+        else:
+            can_answer = True  # Let AI use its general knowledge
+        
+        if not can_answer:
+            # Log the unknown question
+            log_unknown_question(message)
+            return "I apologize, but I'm not sure about that. Please email moon@algotradecamp.com and we'll get that answered ASAP! 🌙✉️"
+        
+        # Get AI response
+        response = openai.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": f"""You are Moon Dev's friendly AI assistant. Keep responses very short and concise (1-2 sentences max). Add emojis to make responses fun and engaging.
+
+Use this knowledge base for Moon Dev specific questions: {KNOWLEDGE_BASE}
+
+Key guidelines:
+- Use knowledge base for Moon Dev/Algo Trade Camp specific questions
+- Use your general knowledge for common questions
+- Keep responses under 2 sentences
+- Add relevant emojis
+- Never share specific trading strategies or PnL
+- Emphasize learning to code over hand trading
+- Promote the 777 peace and love philosophy
+- Direct technical questions to the bootcamp
+- Suggest watching YouTube for free learning
+"""},
+                {"role": "user", "content": message}
+            ],
+            temperature=TEMPERATURE,
+            max_tokens=MAX_TOKENS
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        cprint(f"❌ Error processing message: {str(e)}", "red")
+        return "Sorry, I encountered an error. Please try again! 🙏"
+
 def start_server():
-    """Start the Flask server"""
+    """Start the server based on mode"""
     try:
         cprint("\n🚀 Starting Moon Dev's Phone Agent...", "green")
         
         if TESTING_MODE:
-            # Run test conversation
-            asyncio.run(test_conversation())
+            # Run Streamlit web interface
+            cprint("🌐 Running in web mode - starting Streamlit server...", "green")
+            import subprocess
+            web_interface_path = Path(project_root) / "src/web/chat_interface.py"
+            subprocess.run(["streamlit", "run", str(web_interface_path)])
         else:
-            # Run Flask server
+            # Run Flask server for Twilio
+            cprint("📞 Running in Twilio mode...", "green")
             cprint(f"📞 Twilio number: {TWILIO_PHONE_NUMBER}", "cyan")
             
             # Print ngrok command for testing locally

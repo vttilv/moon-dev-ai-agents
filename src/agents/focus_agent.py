@@ -91,11 +91,11 @@ cprint(f"📝 .env Path: {env_path}", "cyan")
 
 # Model override settings
 MODEL_TYPE = "ollama"  # Choose from model types above
-MODEL_NAME = "llama3.2"  # Choose from models above
+MODEL_NAME = "gemma:2b"  # Choose from models above
 
 # Configuration for faster testing
-MIN_INTERVAL_MINUTES = 6  # Less than a second
-MAX_INTERVAL_MINUTES = 13  # About a second
+MIN_INTERVAL_MINUTES = 2  # Less than a second
+MAX_INTERVAL_MINUTES = 6  # About a second
 RECORDING_DURATION = 20  # seconds
 FOCUS_THRESHOLD = 8  # Minimum acceptable focus score
 AUDIO_CHUNK_SIZE = 2048
