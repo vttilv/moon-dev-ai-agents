@@ -32,12 +32,13 @@ logging.getLogger().setLevel(logging.CRITICAL)
 console = Console()
 
 # Constants
-PAST_TRANSACTIONS_TO_SHOW = 20
+PAST_TRANSACTIONS_TO_SHOW = 40
 CHECK_INTERVAL = 3
 DISPLAY_DELAY = 0.5
 BASE_URL = "http://api.moondev.com:8000"
 SOUND_ENABLED = True
-AUTO_OPEN_BROWSER = False  # Set to True to automatically open new transactions in browser
+AUTO_OPEN_BROWSER = True  # Set to True to automatically open new transactions in browser
+USE_DEXSCREENER = True  # Set to True to use DexScreener instead of Birdeye
 
 # Background colors for transaction announcements
 BACKGROUND_COLORS = [
@@ -97,6 +98,19 @@ class TxScanner:
         except Exception:
             return None
             
+    def get_display_link(self, birdeye_link):
+        """Convert Birdeye link to DexScreener link if enabled"""
+        if not USE_DEXSCREENER:
+            return birdeye_link
+            
+        try:
+            # Extract contract address from Birdeye link
+            # Format: https://birdeye.so/token/CONTRACT_ADDRESS?chain=solana
+            contract_address = birdeye_link.split('/token/')[1].split('?')[0]
+            return f"https://dexscreener.com/solana/{contract_address}"
+        except Exception:
+            return birdeye_link
+            
     def display_past_transaction(self, row):
         """Display a past transaction without animation"""
         try:
@@ -108,14 +122,16 @@ class TxScanner:
         random_emoji = random.choice(TRANSACTION_EMOJIS)
         random_bg = random.choice(BACKGROUND_COLORS)
         
+        display_link = self.get_display_link(row['birdeye_link'])
+        
         # Single line format without extra newlines
-        print(f"{colored(f'{random_emoji} NEW TRANSACTION {time_str}', 'white', random_bg)} {row['birdeye_link']}")
+        print(f"{colored(f'{random_emoji} NEW TRANSACTION {time_str}', 'white', random_bg)} {display_link}")
         
         # Auto-open in browser if enabled
         if AUTO_OPEN_BROWSER:
             try:
                 import webbrowser
-                webbrowser.open(row['birdeye_link'])
+                webbrowser.open(display_link)
             except Exception:
                 pass
                 
@@ -123,35 +139,26 @@ class TxScanner:
             time.sleep(DISPLAY_DELAY)
         except KeyboardInterrupt:
             raise
-        
+            
     def show_past_transactions(self):
         """Display past transactions"""
-        try:
-            df = self.get_recent_transactions()
-            if df is None or df.empty:
-                return
-                
-            # Remove duplicates keeping only the first occurrence of each birdeye link
-            df = df.drop_duplicates(subset=['birdeye_link'], keep='first')
+        df = self.get_recent_transactions()
+        if df is None or df.empty:
+            return
             
-            # Get the most recent transactions
-            recent_txs = df.tail(PAST_TRANSACTIONS_TO_SHOW)
-            
-            # Store seen transactions and last check time
-            self.seen_links = set(recent_txs['birdeye_link'])
-            self.last_check_time = pd.to_datetime(recent_txs.iloc[-1]['blockTime'], unit='s')
-            
-            print("\n🔍 Recent Transactions:")
-            for _, row in recent_txs.iterrows():
-                try:
-                    self.display_past_transaction(row)
-                except KeyboardInterrupt:
-                    print("\n\n⚡ Moon Dev's Transaction Scanner stopped by user. Goodbye! 👋")
-                    sys.exit(0)
-                    
-        except KeyboardInterrupt:
-            print("\n\n⚡ Moon Dev's Transaction Scanner stopped by user. Goodbye! 👋")
-            sys.exit(0)
+        # Remove duplicates keeping only the first occurrence of each birdeye link
+        df = df.drop_duplicates(subset=['birdeye_link'], keep='first')
+        
+        # Get the most recent transactions
+        recent_txs = df.tail(PAST_TRANSACTIONS_TO_SHOW)
+        
+        # Store seen transactions and last check time
+        self.seen_links = set(recent_txs['birdeye_link'])
+        self.last_check_time = pd.to_datetime(recent_txs.iloc[-1]['blockTime'], unit='s')
+        
+        print("\n🔍 Recent Transactions:")
+        for _, row in recent_txs.iterrows():
+            self.display_past_transaction(row)
             
     def play_sound(self):
         """Play a random sound effect safely"""
@@ -175,15 +182,17 @@ class TxScanner:
         random_emoji = random.choice(TRANSACTION_EMOJIS)
         random_bg = random.choice(BACKGROUND_COLORS)
         
+        display_link = self.get_display_link(row['birdeye_link'])
+        
         # Play sound and display with color
         self.play_sound()
-        print(f"\n{colored(f'{random_emoji} NEW TRANSACTION {time_str}', 'white', random_bg)} {row['birdeye_link']}")
+        print(f"\n{colored(f'{random_emoji} NEW TRANSACTION {time_str}', 'white', random_bg)} {display_link}")
         
         # Auto-open in browser if enabled
         if AUTO_OPEN_BROWSER:
             try:
                 import webbrowser
-                webbrowser.open(row['birdeye_link'])
+                webbrowser.open(display_link)
             except Exception:
                 pass
         

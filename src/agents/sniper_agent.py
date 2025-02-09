@@ -33,11 +33,12 @@ logging.getLogger().setLevel(logging.WARNING)
 console = Console()
 
 # Constants
-PAST_TOKENS_TO_SHOW = 20  # Number of past token launches to display
+PAST_TOKENS_TO_SHOW = 40  # Number of past token launches to display
 CHECK_INTERVAL = 10  # Seconds between each check for new launches
 DISPLAY_DELAY = 0.5  # Seconds between displaying each token
 ANIMATION_DURATION = 10  # Seconds to show attention-grabbing animation
-AUTO_OPEN_BROWSER = False  # Set to True to automatically open new tokens in browser
+AUTO_OPEN_BROWSER = True  # Set to True to automatically open new tokens in browser
+USE_DEXSCREENER = True  # Set to True to use DexScreener instead of Birdeye
 EXCLUDE_PATTERNS = ['So11111111111111111111111111111111111111112']  # Exclude the SOLE token pattern
 BASE_URL = "http://api.moondev.com:8000"
 SOUND_ENABLED = True  # Set to True to enable sound effects, False to disable them
@@ -133,9 +134,13 @@ class TokenScanner:
             with open(save_path, 'wb') as f:
                 f.write(response.content)
             
-            return pd.read_csv(save_path)
+            df = pd.read_csv(save_path)
+            print(f"🔍 Debug: API returned {len(df)} tokens")
+            print(f"🔍 Debug: Time range: {pd.to_datetime(df['Time Found']).min()} to {pd.to_datetime(df['Time Found']).max()}")
+            return df
                 
-        except Exception:
+        except Exception as e:
+            print(f"⚠️ Debug: Error fetching tokens: {str(e)}")
             return None
         
     def filter_tokens(self, df):
@@ -143,13 +148,31 @@ class TokenScanner:
         if df is None or df.empty:
             return pd.DataFrame()
             
+        print(f"🔍 Debug: Filtering tokens...")
         # Filter out tokens containing excluded patterns
         for pattern in EXCLUDE_PATTERNS:
+            before_count = len(df)
             df = df[~df['Token Address'].str.contains(pattern, case=True)]
+            after_count = len(df)
+            if before_count != after_count:
+                print(f"🔍 Debug: Removed {before_count - after_count} tokens matching pattern {pattern}")
             
         # Sort by time found, oldest first
         return df.sort_values('Epoch Time', ascending=True)
         
+    def get_display_link(self, birdeye_link):
+        """Convert Birdeye link to DexScreener link if enabled"""
+        if not USE_DEXSCREENER:
+            return birdeye_link
+            
+        try:
+            # Extract contract address from Birdeye link
+            # Format: https://birdeye.so/token/CONTRACT_ADDRESS?chain=solana
+            contract_address = birdeye_link.split('/token/')[1].split('?')[0]
+            return f"https://dexscreener.com/solana/{contract_address}"
+        except Exception:
+            return birdeye_link
+            
     def display_past_token(self, address, time_found, birdeye_link):
         """Display a past token without animation"""
         try:
@@ -160,15 +183,17 @@ class TokenScanner:
             
         random_emoji = random.choice(LAUNCH_EMOJIS)
         random_bg = random.choice(BACKGROUND_COLORS)
+        
+        display_link = self.get_display_link(birdeye_link)
             
         print(f"\n{colored(f'{random_emoji} NEW TOKEN FOUND', 'white', random_bg)} {time_str}")
-        print(f"{birdeye_link}")
+        print(f"{display_link}")
         
         # Auto-open in browser if enabled
         if AUTO_OPEN_BROWSER:
             try:
                 import webbrowser
-                webbrowser.open(birdeye_link)
+                webbrowser.open(display_link)
             except Exception:
                 pass
                 
@@ -177,13 +202,17 @@ class TokenScanner:
     def show_past_tokens(self):
         """Display past token launches"""
         df = self.get_token_addresses()
+        print(f"\n🔍 Debug: Initial token count: {len(df) if df is not None else 0}")
+        
         df = self.filter_tokens(df)
+        print(f"🔍 Debug: After filtering: {len(df) if df is not None else 0}")
         
         if df.empty:
             return
             
         # Get the most recent tokens (from the end since we're sorted ascending)
         recent_tokens = df.tail(PAST_TOKENS_TO_SHOW)
+        print(f"🔍 Debug: Recent tokens count: {len(recent_tokens)}")
         
         # Store seen tokens and last check time
         self.seen_tokens = set(recent_tokens['Token Address'])
@@ -218,15 +247,17 @@ class TokenScanner:
             
         random_emoji = random.choice(LAUNCH_EMOJIS)
         random_bg = random.choice(BACKGROUND_COLORS)
+        
+        display_link = self.get_display_link(birdeye_link)
             
         print(f"\n{colored(f'{random_emoji} NEW TOKEN FOUND', 'white', random_bg)} {time_str}")
-        print(f"{birdeye_link}")
+        print(f"{display_link}")
         
         # Auto-open in browser if enabled
         if AUTO_OPEN_BROWSER:
             try:
                 import webbrowser
-                webbrowser.open(birdeye_link)
+                webbrowser.open(display_link)
             except Exception:
                 pass
         
