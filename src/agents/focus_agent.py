@@ -37,6 +37,7 @@ import tempfile
 from src.config import *
 from src.models import model_factory
 import re
+import requests
 
 # Load .env file explicitly from project root
 load_dotenv(dotenv_path=env_path)
@@ -90,8 +91,8 @@ cprint(f"📝 .env Path: {env_path}", "cyan")
 # - "llama3.2": Balanced model good for most tasks
 
 # Model override settings
-MODEL_TYPE = "ollama"  # Choose from model types above
-MODEL_NAME = "gemma:2b"  # Choose from models above
+MODEL_TYPE = "claude"  # Choose from model types above
+MODEL_NAME = "claude-3-haiku-20240307"  # Choose from models above
 
 # Configuration for faster testing
 MIN_INTERVAL_MINUTES = 2  # Less than a second
@@ -341,8 +342,60 @@ class FocusAgent:
                     response_content = response
                 else:
                     response_content = response.content if hasattr(response, 'content') else str(response)
+                
+                # Print raw response for debugging
+                cprint(f"\n📝 Raw model response:", "magenta")
+                cprint(f"══════════════════════════════", "magenta")
+                cprint(response_content, "yellow")
+                cprint(f"══════════════════════════════\n", "magenta")
+                
+                # Improved response parsing
+                try:
+                    # Clean up the response and convert to lowercase for consistent parsing
+                    lines = [line.strip().lower() for line in response_content.split('\n') if line.strip()]
+                    
+                    # Look for score in any line
+                    score = None
+                    message = None
+                    
+                    for line in lines:
+                        # Remove any "line X:" prefixes (case insensitive)
+                        line = re.sub(r'^line\s*\d+:\s*', '', line, flags=re.IGNORECASE)
+                        
+                        # Try to find score
+                        if not score and re.search(r'\d+/10', line):
+                            score_match = re.search(r'(\d+)/10', line)
+                            if score_match:
+                                score = float(score_match.group(1))
+                                continue
+                        
+                        # If not a score line and not a system message, treat as message
+                        if not any(keyword in line for keyword in ['transcript', 'consider', 'respond', 'important']):
+                            # Get original case message from response_content
+                            original_lines = [l.strip() for l in response_content.split('\n') if l.strip()]
+                            for orig_line in original_lines:
+                                if re.sub(r'^line\s*\d+:\s*', '', orig_line, flags=re.IGNORECASE).lower() == line:
+                                    message = re.sub(r'^line\s*\d+:\s*', '', orig_line, flags=re.IGNORECASE)
+                                    break
+                    
+                    if score is not None and message:
+                        # Validate score range
+                        if not (1 <= score <= 10):
+                            score = max(1, min(10, score))  # Clamp between 1 and 10
+                        
+                        return score, message
+                    else:
+                        cprint(f"\n⚠️ Parsing Debug:", "yellow")
+                        cprint(f"  ├─ Score found: {score}", "yellow")
+                        cprint(f"  └─ Message found: {message}", "yellow")
+                        raise ValueError("Could not extract score and message")
+                    
+                except Exception as e:
+                    cprint(f"\n❌ Error in response parsing: {str(e)}", "red")
+                    return 5, "Error parsing focus analysis"  # Return middle score instead of 0
+                
             else:
-                # For other API-based models
+                # Handle other model types (unchanged)
                 response = self.model.generate_response(
                     system_prompt=FOCUS_PROMPT,
                     user_content=transcript,
@@ -350,63 +403,26 @@ class FocusAgent:
                     max_tokens=AI_MAX_TOKENS
                 )
                 response_content = response.content
-            
-            # Print raw response for debugging
-            cprint(f"\n📝 Raw model response:", "magenta")
-            cprint(f"══════════════════════════════", "magenta")
-            cprint(response_content, "yellow")
-            cprint(f"══════════════════════════════\n", "magenta")
-            
-            # Split into score and message, taking only the first two lines
-            try:
-                # Clean up the response and remove any markdown
-                response_content = response_content.replace('*', '').replace('_', '')
-                response_content = re.sub(r'LINE \d+:', '', response_content)
-                response_content = re.sub(r'[""]', '', response_content)
                 
-                # Split into lines and clean
-                lines = [line.strip() for line in response_content.strip().split('\n') if line.strip()]
+                # Parse the response
+                lines = response_content.split('\n')
+                if len(lines) >= 2:
+                    score_line = lines[0].strip()
+                    message = lines[1].strip()
+                    
+                    # Extract score
+                    score_match = re.search(r'(\d+)/10', score_line)
+                    if score_match:
+                        score = float(score_match.group(1))
+                        return score, message
                 
-                # Find the score line (should contain X/10)
-                score_line = None
-                message_lines = []
+                # If parsing fails, return default values
+                cprint("⚠️ Couldn't parse response, using default values", "yellow")
+                return 5, "Keep crushing it Moon Dev! Your focus is amazing!"
                 
-                for line in lines:
-                    if not score_line and '/' in line and '/10' in line:
-                        # Extract just the score part if there's extra text
-                        score_match = re.search(r'(\d+)/10', line)
-                        if score_match:
-                            score_line = score_match.group(0)
-                    elif line and not line.lower().startswith(('line', 'transcript', 'example', 'consider', 'respond', 'important')):
-                        message_lines.append(line)
-                
-                if not score_line or not message_lines:
-                    raise ValueError("Could not find score and message in response")
-                
-                # Combine message lines into one sentence
-                message = ' '.join(message_lines)
-                
-                # Extract just the number
-                score = float(score_line.split('/')[0])
-                
-                # Validate score range
-                if not (1 <= score <= 10):
-                    raise ValueError(f"Score {score} out of valid range (1-10)")
-                
-                # Validate response
-                if 'chicken' in transcript.lower() and score > 3:
-                    cprint(f"\n⚠️ Warning: High score ({score}) for chicken test!", "yellow")
-                    cprint("  └─ This might indicate an issue with the model's analysis", "yellow")
-                
-                return score, message.strip()
-            except (ValueError, IndexError) as e:
-                cprint(f"\n❌ Error parsing model response: {str(e)}", "red")
-                cprint(f"  └─ Raw response: {response_content}", "red")
-                return 0, "Error parsing focus analysis"
-            
         except Exception as e:
             cprint(f"❌ Error analyzing focus: {str(e)}", "red")
-            return 0, "Error analyzing focus"
+            return 5, "Error analyzing focus, but keep going Moon Dev!"  # Always return a tuple
 
     def _create_focus_log(self):
         """Create empty focus history CSV"""

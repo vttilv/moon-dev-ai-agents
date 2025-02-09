@@ -42,6 +42,7 @@ USE_DEXSCREENER = True  # Set to True to use DexScreener instead of Birdeye
 EXCLUDE_PATTERNS = ['So11111111111111111111111111111111111111112']  # Exclude the SOLE token pattern
 BASE_URL = "http://api.moondev.com:8000"
 SOUND_ENABLED = True  # Set to True to enable sound effects, False to disable them
+DATA_FOLDER = Path(__file__).parent.parent / "data" / "sniper_agent"  # Folder for token data
 
 # Animation sequences
 ATTENTION_EMOJIS = [
@@ -78,6 +79,8 @@ class TokenScanner:
         """🌙 Moon Dev's Token Scanner - Built with love by Moon Dev 🚀"""
         self.base_dir = Path(__file__).parent / "api_data"
         self.base_dir.mkdir(parents=True, exist_ok=True)
+        self.data_dir = DATA_FOLDER
+        self.data_dir.mkdir(parents=True, exist_ok=True)
         self.seen_tokens = set()
         self.last_check_time = None
         self.sound_enabled = SOUND_ENABLED
@@ -135,12 +138,9 @@ class TokenScanner:
                 f.write(response.content)
             
             df = pd.read_csv(save_path)
-            print(f"🔍 Debug: API returned {len(df)} tokens")
-            print(f"🔍 Debug: Time range: {pd.to_datetime(df['Time Found']).min()} to {pd.to_datetime(df['Time Found']).max()}")
             return df
                 
         except Exception as e:
-            print(f"⚠️ Debug: Error fetching tokens: {str(e)}")
             return None
         
     def filter_tokens(self, df):
@@ -148,14 +148,9 @@ class TokenScanner:
         if df is None or df.empty:
             return pd.DataFrame()
             
-        print(f"🔍 Debug: Filtering tokens...")
         # Filter out tokens containing excluded patterns
         for pattern in EXCLUDE_PATTERNS:
-            before_count = len(df)
             df = df[~df['Token Address'].str.contains(pattern, case=True)]
-            after_count = len(df)
-            if before_count != after_count:
-                print(f"🔍 Debug: Removed {before_count - after_count} tokens matching pattern {pattern}")
             
         # Sort by time found, oldest first
         return df.sort_values('Epoch Time', ascending=True)
@@ -199,24 +194,35 @@ class TokenScanner:
                 
         time.sleep(DISPLAY_DELAY)
         
+    def save_tokens_for_analysis(self, df):
+        """Save tokens to CSV for analysis"""
+        try:
+            # Add timestamp column for when we saved this data
+            df['saved_at'] = pd.Timestamp.now()
+            
+            # Save to CSV
+            save_path = self.data_dir / "recent_tokens.csv"
+            df.to_csv(save_path, index=False)
+        except Exception:
+            pass
+            
     def show_past_tokens(self):
         """Display past token launches"""
         df = self.get_token_addresses()
-        print(f"\n🔍 Debug: Initial token count: {len(df) if df is not None else 0}")
-        
         df = self.filter_tokens(df)
-        print(f"🔍 Debug: After filtering: {len(df) if df is not None else 0}")
         
         if df.empty:
             return
             
         # Get the most recent tokens (from the end since we're sorted ascending)
         recent_tokens = df.tail(PAST_TOKENS_TO_SHOW)
-        print(f"🔍 Debug: Recent tokens count: {len(recent_tokens)}")
         
         # Store seen tokens and last check time
         self.seen_tokens = set(recent_tokens['Token Address'])
         self.last_check_time = pd.to_datetime(recent_tokens.iloc[-1]['Time Found'])
+        
+        # Save tokens for analysis
+        self.save_tokens_for_analysis(recent_tokens)
         
         print("\n🔍 Recent Token Launches:")
         for _, row in recent_tokens.iterrows():
@@ -289,8 +295,18 @@ class TokenScanner:
                     new_tokens = set(new_df['Token Address']) - self.seen_tokens
                     
                     if new_tokens:
-                        # Display new tokens in chronological order
-                        for _, row in new_df[new_df['Token Address'].isin(new_tokens)].iterrows():
+                        # Get all new tokens in chronological order
+                        new_token_rows = new_df[new_df['Token Address'].isin(new_tokens)]
+                        
+                        # Save updated tokens list for analysis
+                        all_recent = pd.concat([
+                            pd.read_csv(self.data_dir / "recent_tokens.csv"),
+                            new_token_rows
+                        ]).tail(PAST_TOKENS_TO_SHOW)
+                        self.save_tokens_for_analysis(all_recent)
+                        
+                        # Display new tokens
+                        for _, row in new_token_rows.iterrows():
                             try:
                                 self.display_token(
                                     row['Token Address'],

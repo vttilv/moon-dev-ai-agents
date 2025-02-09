@@ -34,7 +34,9 @@ feel free to join our discord if you beleive ai agents will be integrated into t
 - chat agent (`chat_agent.py`): an agent that monitors youtube live stream chat, moderates & responds to known questions. absolute fire.
 - clips agent (`clips_agent.py`): an agent that helps clip long videos into shorter ones so you can upload to your youtube and get paid more info is in the code notes and here: https://discord.gg/XAw8US9aHT
 - phone agent (`phone_agent.py`): an ai agent that can take phone calls for you
-- scanner agent (`sniper_agent.py`): sniper agent that watches for new solana token launches and will then analyze them and maybe snipe
+- sniper agent (`sniper_agent.py`): sniper agent that watches for new solana token launches and will then analyze them and maybe snipe
+- tx agent (`tx_agent.py`): watches transactions made by my copy list and then prints them out with an optional auto tab open
+- solana agent (`solana_agent.py`): looks at the sniper agent and the tx agent in order to select which memes may be interesting
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
@@ -69,6 +71,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 2/9 - created a solana agent in order to parse through the new solana launches and the copy bot list and applies filters to them before picking their top picks and opening in my browser
 - [x] 2/8 - created the sniper agent that watches for new solana token launches and will then analyze them and maybe snipe
 - [x] 2/7 - created a phone call agent that can be used for customer support, onboarding or sales with a twilio number
 - [x] 2/6 - added ollama to allow for local deepseek r1, gema and llama 3.2 and any other ollama or hugging face model

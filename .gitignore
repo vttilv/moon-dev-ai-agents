@@ -10,6 +10,10 @@ config.private.py
 MYNOTES.md
 temp_data/
 
+# Shell files
+.zshrc
+**/.zshrc
+
 # Python
 __pycache__/
 *.py[cod]
@@ -99,7 +103,11 @@ src/audio
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/private_data
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
-
+*.zshrc
+/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.zshrc
+src/data/solana_agent
+src/data/sniper_agent
+src/data/tx_agent
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/videos/raw_clips
 
 # Project specific

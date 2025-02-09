@@ -39,6 +39,7 @@ BASE_URL = "http://api.moondev.com:8000"
 SOUND_ENABLED = True
 AUTO_OPEN_BROWSER = True  # Set to True to automatically open new transactions in browser
 USE_DEXSCREENER = True  # Set to True to use DexScreener instead of Birdeye
+DATA_FOLDER = Path(__file__).parent.parent / "data" / "tx_agent"  # Folder for transaction data
 
 # Background colors for transaction announcements
 BACKGROUND_COLORS = [
@@ -64,6 +65,8 @@ class TxScanner:
         """🌙 Moon Dev's Transaction Scanner - Built with love by Moon Dev 🚀"""
         self.base_dir = Path(__file__).parent / "api_data"
         self.base_dir.mkdir(parents=True, exist_ok=True)
+        self.data_dir = DATA_FOLDER
+        self.data_dir.mkdir(parents=True, exist_ok=True)
         self.seen_links = set()
         self.last_check_time = None
         self.sound_enabled = SOUND_ENABLED
@@ -140,6 +143,18 @@ class TxScanner:
         except KeyboardInterrupt:
             raise
             
+    def save_transactions_for_analysis(self, df):
+        """Save transactions to CSV for analysis"""
+        try:
+            # Add timestamp column for when we saved this data
+            df['saved_at'] = pd.Timestamp.now()
+            
+            # Save to CSV
+            save_path = self.data_dir / "recent_transactions.csv"
+            df.to_csv(save_path, index=False)
+        except Exception:
+            pass
+            
     def show_past_transactions(self):
         """Display past transactions"""
         df = self.get_recent_transactions()
@@ -155,6 +170,9 @@ class TxScanner:
         # Store seen transactions and last check time
         self.seen_links = set(recent_txs['birdeye_link'])
         self.last_check_time = pd.to_datetime(recent_txs.iloc[-1]['blockTime'], unit='s')
+        
+        # Save transactions for analysis
+        self.save_transactions_for_analysis(recent_txs)
         
         print("\n🔍 Recent Transactions:")
         for _, row in recent_txs.iterrows():
@@ -217,8 +235,18 @@ class TxScanner:
                     new_links = set(new_df['birdeye_link']) - self.seen_links
                     
                     if new_links:
-                        # Display new transactions in chronological order
-                        for _, row in new_df[new_df['birdeye_link'].isin(new_links)].iterrows():
+                        # Get all new transactions in chronological order
+                        new_txs = new_df[new_df['birdeye_link'].isin(new_links)]
+                        
+                        # Save updated transactions list for analysis
+                        all_recent = pd.concat([
+                            pd.read_csv(self.data_dir / "recent_transactions.csv"),
+                            new_txs
+                        ]).tail(PAST_TRANSACTIONS_TO_SHOW)
+                        self.save_transactions_for_analysis(all_recent)
+                        
+                        # Display new transactions
+                        for _, row in new_txs.iterrows():
                             try:
                                 self.display_transaction(row)
                                 self.seen_links.add(row['birdeye_link'])
