@@ -299,22 +299,35 @@ class SolanaAnalyzer:
             df = df.rename(columns={'contract_address': 'token_address'})
         elif 'birdeye_link' in df.columns:
             # Extract from birdeye link if no direct address column
-            df['token_address'] = df['birdeye_link'].apply(lambda x: x.split('/token/')[1].split('?')[0])
+            df['token_address'] = df['birdeye_link'].apply(lambda x: x.split('/token/')[1].split('?')[0] if isinstance(x, str) else None)
             
         if 'token_address' not in df.columns:
             print("⚠️ Could not find token address column in data")
             return results
             
+        # Clean the dataframe - remove rows with invalid token addresses
+        df = df.dropna(subset=['token_address'])  # Remove rows where token_address is NaN
+        df = df[df['token_address'].astype(str).str.len() > 30]  # Basic validation for Solana addresses
+        
         # Debug print to verify data
-        print(f"\n🔍 Processing {len(df)} tokens from data source")
+        print(f"\n🔍 Processing {len(df)} valid tokens from data source")
         print(f"Columns found: {df.columns.tolist()}")
             
         for _, row in df.iterrows():
-            token_data = self.analyze_token(row['token_address'])
-            if token_data:
-                results.append(token_data)
-                self.display_top_pick(token_data)
-                time.sleep(1)  # Slight delay between displays
+            try:
+                token_address = str(row['token_address']).strip()
+                if not token_address or token_address.lower() == 'nan':
+                    continue
+                    
+                token_data = self.analyze_token(token_address)
+                if token_data:
+                    results.append(token_data)
+                    self.display_top_pick(token_data)
+                    time.sleep(1)  # Slight delay between displays
+            except Exception as e:
+                print(f"⚠️ Error processing token: {str(e)}")
+                continue
+                
         return results
         
     def run_analysis(self):
