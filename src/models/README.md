@@ -32,6 +32,7 @@ Latest Models:
 ### Gemini Models (Google)
 Latest Models:
 - `gemini-2.0-flash-exp`: Next-gen multimodal model (Audio, images, video, text)
+- `gemini-2.0-flash`: Fast, efficient model optimized for quick responses
 - `gemini-1.5-flash`: Fast versatile model (Audio, images, video, text)
 - `gemini-1.5-flash-8b`: High volume tasks (Audio, images, video, text)
 - `gemini-1.5-pro`: Complex reasoning tasks (Audio, images, video, text)

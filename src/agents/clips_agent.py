@@ -99,7 +99,7 @@ MAX_CLIP_DURATION = 1200  # 20 minutes in seconds
 MAX_SENTENCES = 5  # Maximum number of sentences in AI response
 
 # Processing mode
-PROCESS_YOUTUBE = True  # Set to False to process local videos without AI analysis
+PROCESS_YOUTUBE = False  # Set to False to process local videos without AI analysis
 # when False it will use the videos below in the input_dir folder without getting transcripts
 
 # AI Settings (only used if PROCESS_YOUTUBE is True)

@@ -11,6 +11,7 @@ class GeminiModel(BaseModel):
     """Implementation for Google's Gemini models"""
     
     AVAILABLE_MODELS = {
+        "gemini-2.0-flash": "Latest fast Gemini model for quick responses",
         "gemini-pro": "Most capable Gemini model",
         "gemini-pro-vision": "Gemini model with vision capabilities"
     }

@@ -37,6 +37,7 @@ feel free to join our discord if you beleive ai agents will be integrated into t
 - sniper agent (`sniper_agent.py`): sniper agent that watches for new solana token launches and will then analyze them and maybe snipe
 - tx agent (`tx_agent.py`): watches transactions made by my copy list and then prints them out with an optional auto tab open
 - solana agent (`solana_agent.py`): looks at the sniper agent and the tx agent in order to select which memes may be interesting
+- million agent (`million_agent.py`): uses million context window from gemini to pull in a knowledge base
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
@@ -71,6 +72,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 2/20 - launched the million agent that has a million token context so you can apply it to other agentic flows. it uses geminis flash 2.0 so that has also been added to the model factory. also built a script that takes any folder of code and outputs to a txt file. thats in the scripts folder. 
 - [x] 2/9 - created a solana agent in order to parse through the new solana launches and the copy bot list and applies filters to them before picking their top picks and opening in my browser
 - [x] 2/8 - created the sniper agent that watches for new solana token launches and will then analyze them and maybe snipe
 - [x] 2/7 - created a phone call agent that can be used for customer support, onboarding or sales with a twilio number

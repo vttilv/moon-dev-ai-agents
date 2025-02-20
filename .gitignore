@@ -2,6 +2,8 @@
 # Keep your secrets safe! 🔒
 
 # API Keys and Sensitive Data
+src/data/codetotext
+src/data/book_agent
 .env
 dontshare.py
 **/dontshare.py
@@ -86,6 +88,10 @@ src/data/sentiment
 src/data/focus_history.csv
 src/data/discovered_tokens.csv
 src/data/ai_analysis.csv
+
+# Frontend directory
+src/frontend/
+**/src/frontend/
 
 # add this to gitignor /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data
 

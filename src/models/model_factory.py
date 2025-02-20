@@ -37,7 +37,7 @@ class ModelFactory:
         "claude": "claude-3-5-haiku-latest",  # Latest fast Claude model
         "groq": "mixtral-8x7b-32768",        # Fast Mixtral model
         "openai": "gpt-4o",                  # Latest GPT-4 Optimized
-        "gemini": "gemini-2.0-flash-exp",    # Latest Gemini model
+        "gemini": "gemini-2.0-flash",        # Latest Gemini model
         "deepseek": "deepseek-chat",         # Fast chat model
         "ollama": "llama3.2"                 # Meta's Llama 3.2 - fast and efficient
     }

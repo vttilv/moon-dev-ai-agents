@@ -1,25 +1,29 @@
-STRATEGY\_NAME: ATR\_MeanReversion
+STRATEGY\_NAME: ATR\_MomentumReversion
 
 STRATEGY\_DETAILS:
 
-This strategy focuses on mean reversion using the Keltner channel, an ATR-based stop loss, and a 2B price pattern for entry.
+This strategy focuses on trading mean reversion by identifying overextended instruments using Average True Range (ATR) and Keltner Channels. The key components of this strategy are:
 
-1. Key strategy components:
-- Keltner channel with a 20-period setting and a multiplier of 2.5
-- ATR-based stop loss
-- 2B price pattern for entry
+1. Identifying overextended instruments:
+   - Calculate the ATR value for the instrument.
+   - Use Keltner Channels with a period of 20 and a multiplier of 2.5.
+   - If price moves beyond the upper or lower channel, it could form a mean reversion trade.
 
-2. Entry/exit rules:
-- Enter a short position when price breaks the upper Keltner channel and forms a reversal candlestick.
-- Place a sell stop order below the reversal candle.
-- Set a protective stop loss just beyond the high of the reversal candle.
-- Exit the position if price continues in the trend direction and breaks the high of the reversal candle.
+2. Entry rules:
+   - Look for a 2B price pattern:
+     - Price runs up or down and breaks the channel or band.
+     - A slight retracement occurs, bringing new longs into the action.
+     - A reversal candlestick takes place.
+   - Place a sell stop (for long trades) or buy stop (for short trades) below the reversal candle.
 
-3. Risk management:
-- Use an ATR-based stop loss to protect your capital. Calculate the ATR for the same 20-period setting as the Keltner channel and set your stop loss a certain number of ATRs away from the entry price.
+3. Exit rules:
+   - Use a protective stop loss beyond the high (for long trades) or low (for short trades) of the reversal candle.
 
-4. Required indicators:
-- Keltner channel
-- ATR (Average True Range)
+4. Risk management:
+   - Consider using half of your normal size for these trades, as there might be another poke above or below as different time frames react to the event.
 
-This strategy aims to trade overextended instruments by identifying mean reversion opportunities using the Keltner channel and a 2B price pattern. It uses an ATR-based stop loss to manage risk and protect capital during trend moves. By combining these tools, traders can potentially profit from mean reversion while minimizing risk.
+5. Required indicators:
+   - Average True Range (ATR)
+   - Keltner Channels (20 periods, multiplier of 2.5)
+
+The strategy aims to trade against the trend with a reversion to the mean approach but requires a proper setup to increase the odds of success. Traders should look for an overextended instrument and follow the 2B price pattern entry rules to manage risk and lock in profits during trend moves.
