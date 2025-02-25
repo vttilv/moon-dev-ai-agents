@@ -32,8 +32,8 @@ Remember: Past performance doesn't guarantee future results!
 # Model Configuration
 # Each agent can use a different model type and name
 RESEARCH_CONFIG = {
-    "type": "groq",
-    "name": "mixtral-8x7b-32768"  # Fast reasoning model for research
+    "type": "claude",
+    "name": "claude-3-haiku-20240307"  # Fast reasoning model for research
 }
 
 BACKTEST_CONFIG = {
@@ -395,8 +395,18 @@ def get_youtube_transcript(video_id):
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         transcript = transcript_list.find_generated_transcript(['en'])
-        cprint("📺 Successfully fetched YouTube transcript!", "green")
-        return ' '.join([t['text'] for t in transcript.fetch()])
+        
+        # Get the full transcript text
+        transcript_text = ' '.join([t['text'] for t in transcript.fetch()])
+        
+        # Print the transcript with nice formatting
+        cprint("\n📝 YouTube Transcript:", "cyan")
+        cprint("=" * 80, "yellow")
+        print(transcript_text)
+        cprint("=" * 80, "yellow")
+        cprint(f"📊 Transcript length: {len(transcript_text)} characters", "cyan")
+        
+        return transcript_text
     except Exception as e:
         cprint(f"❌ Error fetching transcript: {e}", "red")
         return None

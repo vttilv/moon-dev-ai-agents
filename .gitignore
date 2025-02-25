@@ -3,7 +3,7 @@
 
 # API Keys and Sensitive Data
 src/data/codetotext
-src/data/book_agent
+src/data/million_agent
 .env
 dontshare.py
 **/dontshare.py
@@ -19,6 +19,7 @@ temp_data/
 # Python
 __pycache__/
 *.py[cod]
+src/data/tiktok_agent
 *$py.class
 *.so
 .Python
