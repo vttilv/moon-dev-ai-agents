@@ -147,6 +147,10 @@ SHARE_DETECTION_HEIGHT = 60
 BROWSER_X = -1919  # Adjust this to your screen
 BROWSER_Y = -1065   # Adjust this to your screen
 
+# Safe click coordinates specifically for live videos (to avoid opening in new tab)
+LIVE_SAFE_CLICK_X = -1488  # Specific coordinates for live videos
+LIVE_SAFE_CLICK_Y = -883   # Specific coordinates for live videos
+
 # URL address bar coordinates (where to click to select the URL)
 URL_BAR_X = -2211  # Coordinates for the browser address bar
 URL_BAR_Y = -1491  # Coordinates for the browser address bar
@@ -197,21 +201,18 @@ def get_display_bounds():
         # Create array for display IDs
         max_displays = 32
         
-        # Modified approach to avoid depythonifying error
+        # Modified approach to avoid tuple interpretation error
         try:
-            display_count = CG.CGGetOnlineDisplayList(max_displays, None, None)
-            if isinstance(display_count, int):
-                # If we get an int back, it's likely an error code
-                cprint(f"⚠️ Display count returned unexpected type: {type(display_count)}", "yellow")
+            # Get online display list
+            result = CG.CGGetOnlineDisplayList(max_displays, None, None)
+            
+            # Check if result is a tuple with at least 3 elements (error code, count, array)
+            if not isinstance(result, tuple) or len(result) < 3:
+                cprint(f"⚠️ Display list returned unexpected format: {result}", "yellow")
                 return []
                 
-            if not isinstance(display_count, tuple) or len(display_count) < 2:
-                # If we don't get a tuple with at least 2 elements, return empty
-                cprint(f"⚠️ Display count returned unexpected format: {display_count}", "yellow")
-                return []
-                
-            # Extract the display count and array from the tuple
-            err, count, display_array = display_count
+            # Extract the error code, display count and array from the tuple
+            err, count, display_array = result
             
             # Check if we got a valid result
             if err != 0 or count == 0:
@@ -954,6 +955,78 @@ def save_live_video_url(url, video_number):
         cprint(traceback.format_exc(), "red")
         return False
 
+def safe_navigate_from_live(video_number):
+    """Safely navigate away from a live video to the next video
+    
+    This function is specifically designed to handle live videos with extra care
+    to avoid accidentally opening them in a new tab or triggering unwanted actions.
+    """
+    try:
+        cprint("\n🛡️ Using safe navigation for live video...", "cyan")
+        
+        # Use the specific coordinates for live videos that won't trigger opening in a new tab
+        cprint(f"🖱️ Moving to safe area for live videos ({LIVE_SAFE_CLICK_X}, {LIVE_SAFE_CLICK_Y})", "cyan", attrs=["bold"])
+        
+        # First try the dedicated safe coordinates for live videos
+        if not move_mouse_cg(LIVE_SAFE_CLICK_X, LIVE_SAFE_CLICK_Y):
+            cprint("⚠️ Failed to move to primary safe area, trying fallback position", "yellow")
+            
+            # Try a different position as fallback - far from any clickable elements
+            fallback_x = BROWSER_X - 200  # Far from the edge
+            fallback_y = BROWSER_Y + 200  # Far from the bottom
+            
+            if not move_mouse_cg(fallback_x, fallback_y):
+                cprint("❌ Failed to move to fallback position!", "red")
+                return False
+        
+        # IMPORTANT: Only click ONCE with a very gentle click
+        cprint("🖱️ Performing a SINGLE gentle click to activate browser", "cyan", attrs=["bold"])
+        time.sleep(0.7)  # Longer pause before clicking for live videos
+        
+        # Get current position
+        pos = CG.CGEventGetLocation(CG.CGEventCreate(None))
+        
+        # Create mouse events - SINGLE CLICK ONLY
+        mouse_down = CG.CGEventCreateMouseEvent(None, CG.kCGEventLeftMouseDown, pos, CG.kCGMouseButtonLeft)
+        mouse_up = CG.CGEventCreateMouseEvent(None, CG.kCGEventLeftMouseUp, pos, CG.kCGMouseButtonLeft)
+        
+        # Post events with longer pauses
+        CG.CGEventPost(CG.kCGHIDEventTap, mouse_down)
+        time.sleep(0.4)  # Hold the click a bit longer
+        CG.CGEventPost(CG.kCGHIDEventTap, mouse_up)
+        
+        # Longer pause after clicking to ensure browser is activated
+        time.sleep(1.0)
+        
+        cprint("✅ Browser activated with single click", "green")
+        
+        # Press down arrow to move to next video
+        cprint("⬇️ Pressing down arrow to navigate to next video...", "cyan")
+        if not press_down_arrow():
+            cprint("❌ Failed to press down arrow!", "red")
+            # Try one more time
+            time.sleep(0.5)
+            if not press_down_arrow():
+                cprint("❌ Failed to press down arrow on second attempt!", "red")
+                return False
+        
+        # Wait for next video to load with a longer pause for live videos
+        wait_time = SCROLL_PAUSE + 1.0
+        cprint(f"⏳ Waiting {wait_time} seconds for next video to load...", "yellow")
+        time.sleep(wait_time)
+        
+        # Add some randomness to avoid detection
+        random_wait = random.uniform(0.5, 1.5)
+        time.sleep(random_wait)
+        
+        cprint(f"🌙 Moon Dev says: Safely navigated away from live video #{video_number}! 🚀", "magenta")
+        return True
+        
+    except Exception as e:
+        cprint(f"❌ Error navigating from live video: {str(e)}", "red")
+        cprint(traceback.format_exc(), "red")
+        return False
+
 def scrape_tiktok():
     """Main function to scrape TikTok videos and comments"""
     try:
@@ -1005,31 +1078,37 @@ def scrape_tiktok():
                     if current_url:
                         save_live_video_url(current_url, video_number)
                     
-                    # Ensure browser is active with a single click
-                    cprint(f"\n🎮 Activating browser with single click...", "yellow")
-                    if not move_mouse_cg(BROWSER_X, BROWSER_Y):
-                        cprint("❌ Failed to move to browser area!", "red")
-                        continue
+                    # Use our specialized function to safely navigate away from live videos
+                    # This function handles everything: single click + down arrow
+                    if not safe_navigate_from_live(video_number):
+                        cprint("⚠️ Failed to safely navigate from live video, trying fallback method...", "yellow")
                         
-                    # Single click for live videos
-                    time.sleep(CLICK_PAUSE)
-                    if not quick_click():
-                        cprint("❌ Failed to click browser area!", "red")
-                        continue
+                        # Fallback: Try to press Escape first to close any potential popups
+                        try:
+                            cprint("⌨️ Pressing Escape key to close any popups...", "cyan")
+                            esc_key_down = CG.CGEventCreateKeyboardEvent(None, 0x35, True)  # 0x35 is Escape key
+                            esc_key_up = CG.CGEventCreateKeyboardEvent(None, 0x35, False)
+                            CG.CGEventPost(CG.kCGHIDEventTap, esc_key_down)
+                            time.sleep(0.2)
+                            CG.CGEventPost(CG.kCGHIDEventTap, esc_key_up)
+                            time.sleep(0.5)
+                        except Exception as e:
+                            cprint(f"⚠️ Error pressing Escape: {e}", "yellow")
+                        
+                        # Then try a simple down arrow as last resort
+                        press_down_arrow()
+                        time.sleep(SCROLL_PAUSE + 0.5)
                     
-                    # Press down arrow to move to next video
-                    cprint(f"\n⬇️ Scrolling to next video...", "cyan")
-                    if not press_down_arrow():
-                        cprint("❌ Failed to press down arrow!", "red")
-                        continue
-                    
-                    # Wait for next video to load
-                    cprint(f"\n⏳ Waiting {SCROLL_PAUSE} seconds for next video to load...", "yellow")
-                    time.sleep(SCROLL_PAUSE)
-                    
-                    # Add some randomness to avoid detection
-                    random_wait = random.uniform(0.5, 2.0)
-                    time.sleep(random_wait)
+                    # Check if we're still on TikTok after navigating from live video
+                    # This helps detect if we accidentally opened a new tab
+                    check_url = copy_current_url()
+                    if check_url and "tiktok.com" in check_url:
+                        cprint("✅ Successfully stayed on TikTok after live video", "green")
+                    else:
+                        cprint("⚠️ May have navigated away from TikTok - attempting to return", "yellow")
+                        # Try to go back to TikTok
+                        webbrowser.open(TIKTOK_URL)
+                        time.sleep(BROWSER_LOAD_WAIT + 1.0)
                     
                     # Skip the rest of the processing for this video
                     cprint("⏩ Moving to next video...", "yellow")
