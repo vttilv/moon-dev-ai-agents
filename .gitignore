@@ -12,6 +12,8 @@ config.private.py
 MYNOTES.md
 temp_data/
 
+src/data/compliance
+
 # Shell files
 .zshrc
 **/.zshrc

@@ -1,38 +1,30 @@
-fastapi==0.109.0
-uvicorn==0.25.0
-jinja2==3.1.2
-python-multipart==0.0.6
-requests==2.31.0
-PyPDF2==3.0.0
-pandas>=1.5.0
-termcolor==2.3.0
-numpy==1.24.0
-pandas-ta==0.3.14b0
-schedule==1.2.0
-python-dateutil==2.8.2
-backoff==2.2.1
-youtube-transcript-api==0.6.2
-openai==1.59.5
-groq==0.16.0  # Moon Dev's Groq API integration 🚀
-selenium>=4.16.0
-pillow>=10.2.0
-webdriver-manager>=4.0.1
-backtesting>=0.3.3
-TA-Lib>=0.4.24
-moviepy>=1.0.3  # Moon Dev's video processing magic ✨
-tqdm>=4.66.1  # Progress bars for Moon Dev's sanity 🎯
-yt-dlp>=2024.3.10  # Moon Dev's YouTube downloader 🎥
-sounddevice>=0.4.6  # Moon Dev's audio recording 🎤
-wave>=0.0.2  # Moon Dev's audio file handling 🌊
-httpx>=0.27.0  # Moon Dev's async HTTP client 🚀
-numpy>=1.24.0  # Moon Dev's numerical processing 🔢
-langdetect>=1.0.9  # Moon Dev's language detection 🌐
-streamlit>=1.32.0  # Moon Dev's web UI magic ✨
-flask>=3.0.2  # Moon Dev's web server for Twilio 🌐
-twilio>=8.13.0  # Moon Dev's phone integration 📞
-python-dotenv>=1.0.0  # Moon Dev's environment management 🔐
-playsound==1.3.0
-pyautogui>=0.9.54  # Moon Dev's screen automation 🖱️
-pyobjc-framework-Quartz>=9.2  # Moon Dev's macOS integration 🍎
-webbrowser>=0.0.1  # Moon Dev's browser control 🌐
-# Add any other dependencies your agents need
+# 🌙 Moon Dev's Compliance Agent Requirements 🌙
+# Created with ❤️ by Moon Dev's AI Assistant
+
+# Core dependencies
+numpy>=1.24.0
+opencv-python>=4.8.0
+whisper>=1.1.10
+openai>=1.3.0
+anthropic>=0.5.0
+groq>=0.4.0
+google-generativeai>=0.3.0
+termcolor>=2.3.0
+python-dotenv>=1.0.0
+pathlib>=1.0.1
+
+# For transcription
+openai-whisper>=20231117
+ffmpeg-python>=0.2.0
+
+# For image processing
+pillow>=10.0.0
+
+# For API access
+requests>=2.31.0
+
+# For data handling
+pandas>=2.0.0
+
+# For progress bars
+tqdm>=4.66.0
