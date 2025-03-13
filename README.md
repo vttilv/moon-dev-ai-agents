@@ -40,6 +40,7 @@ feel free to join our discord if you beleive ai agents will be integrated into t
 - million agent (`million_agent.py`): uses million context window from gemini to pull in a knowledge base
 - tiktok agent (`tiktok_agent.py`): scrolls tiktok and gets screenshots of the video + comments to extract consumer data in order to feed into algos. sometimes called social arbitrage
 - compliance agent (`compliance_agent.py`): compliance agent to make sure all arbitrage ads are compliant on facebook... tiktok coming soon...
+- research agent (`research_agent`): an agent to fill the ideas.txt so the rbi agent can run forever
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
@@ -74,6 +75,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 3/13 - research agent (`research_agent`): an agent to fill the ideas.txt so the rbi agent can run forever
 - [x] 2/27 - compliance agent to make sure all arbitrage ads are compliant on facebook... tiktok coming soon...
 - [x] 2/25- launched tiktok agent thatscrolls tiktok and gets screenshots of the video + comments to extract consumer data in order to feed into algos. sometimes called social arbitrage
 - [x] 2/20 - launched the million agent that has a million token context so you can apply it to other agentic flows. it uses geminis flash 2.0 so that has also been added to the model factory. also built a script that takes any folder of code and outputs to a txt file. thats in the scripts folder. 

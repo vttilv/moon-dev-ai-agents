@@ -1,0 +1,27 @@
+STRATEGY_NAME: AdaptiveDivergence
+
+STRATEGY_DETAILS:
+The **AdaptiveDivergence** trading strategy leverages the unique behavior of financial markets, particularly focusing on divergences between different asset classes. The approach is dynamic and adapts to changing market conditions without rigid rules, allowing for flexibility in entry/exit points.
+
+### Key Strategy Components:
+1. **Adaptive MACD Oscillator**: The strategy uses a modified MACD oscillator to detect divergence signals.
+2. **Machine Learning Model**: A machine learning model is trained on historical data to predict significant market turning points when divergences are detected.
+3. **Divergence Thresholds**: Divergence is identified when prices of different assets start to move apart beyond predefined thresholds.
+
+### Entry/Exit Rules:
+1. **Entry Rules**:
+   - Wait for the MACD oscillator to signal a divergence that exceeds its usual range.
+   - Use the machine learning model's predictions as confirmation signals (bullish or bearish trends).
+2. **Exit Rules**:
+   - Exit trades when the predicted trend reversal occurs, with a stop-loss mechanism to limit losses.
+
+### Risk Management:
+1. **Stop-Loss Orders**: Implement stop-loss orders based on the length of the divergence period.
+2. **Position Sizing**: Adjust position sizes according to confidence levels in machine learning predictions.
+3. **Early Exit**: Close trades early if the trade starts making profits before the predicted reversal.
+
+### Required Indicators:
+1. **MACD Oscillator**: To identify price and volatility divergences.
+2. **Machine Learning Model**: To predict market turning points based on divergence signals.
+
+This strategy is designed to capitalize on periods of high market uncertainty by focusing on divergent behaviors between different asset classes, aiming for consistent returns while minimizing risk through adaptive rules and machine learning predictions.

@@ -4,6 +4,7 @@
 # API Keys and Sensitive Data
 src/data/codetotext
 src/data/million_agent
+src/data/Arxiv
 .env
 dontshare.py
 **/dontshare.py

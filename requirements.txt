@@ -26,5 +26,6 @@ requests>=2.31.0
 # For data handling
 pandas>=2.0.0
 
-# For progress bars
+# For progress bars and arXiv paper downloader
+# Updated by Moon Dev's AI Assistant on arXiv downloader project
 tqdm>=4.66.0

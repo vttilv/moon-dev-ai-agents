@@ -1,0 +1,19 @@
+STRATEGY_NAME: AdaptiveSynergy
+
+STRATEGY_DETAILS:
+This strategy combines momentum analysis with relative strength (RS) and stochastic oscillator (Sto) to identify trading opportunities. Here's how it works:
+
+1. **Key Strategy Components**:
+   - **Adaptive Moving Average (AMA)**: Calculates momentum dynamically, adjusting based on market conditions.
+   - **Relative Strength Index (RSI)**: Measures the strength of a security's price action.
+   - **Stochastic Oscillator (Sto)**: Identifies potential reversals by comparing closing prices to recent price ranges.
+
+2. **Entry/Exit Rules**:
+   - **Entry**: Buy when RSI or Sto diverges from a bullish AMA, indicating a possible trend reversal.
+   - **Exit**: Close trades when the divergence reverses or a price correction occurs.
+
+3. **Risk Management**:
+   - Use stop-loss orders at entry points to limit losses.
+   - Adjust position sizing based on risk tolerance percentages.
+
+By integrating these elements, the strategy aims for high-probability trades with adaptability to market shifts.

@@ -1,0 +1,8 @@
+STRATEGY_NAME: QuantumReversal
+
+STRATEGY_DETAILS:
+This strategy leverages quantum-inspired momentum to identify and capitalize on short-term price reversals. The core approach involves analyzing order flow imbalance across multiple time frames (15-60 minutes) using fractal patterns as a leading indicator of reversal potential. Confirmation is provided by high volatility metrics such as the Average True Range (ATR). 
+
+Entry rules are triggered when these conditions converge, signaling an intra-day price reversal likelihood. The strategy then sets up gamma short positions to hedge against market moves while maintaining limited downside risk through position sizing based on current volatility levels.
+
+Risk management incorporates stop-loss thresholds proportional to expected profit targets and dynamic adjustments for changing market conditions. A trailing stop is also employed during trending periods to lock in profits or limit losses.

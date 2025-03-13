@@ -7,14 +7,16 @@ Required Setup:
    src/
    ├── data/
    │   └── rbi/
-   │       ├── research/         # Strategy research outputs
-   │       ├── backtests/        # Initial backtest code
-   │       ├── backtests_final/  # Debugged backtest code
-   │       ├── BTC-USD-15m.csv  # Price data for backtesting
-   │       └── ideas.txt        # Trading ideas to process
+   │       ├── MM_DD_YYYY/         # Date-based folder (created automatically)
+   │       │   ├── research/       # Strategy research outputs
+   │       │   ├── backtests/      # Initial backtest code
+   │       │   ├── backtests_package/ # Package-fixed code
+   │       │   ├── backtests_final/ # Debugged backtest code
+   │       │   └── charts/         # Charts output directory
+   │       └── ideas.txt          # Trading ideas to process
 
 2. Environment Variables:
-   - DEEPSEEK_KEY: Your DeepSeek API key
+   - No API keys needed! We're using local Ollama models 🎉
 
 3. Create ideas.txt:
    - One trading idea per line
@@ -26,42 +28,42 @@ This agent automates the RBI process:
 2. Backtest: Creates backtests for promising strategies
 3. Debug: Fixes technical issues in generated backtests
 
+✨ NEW FEATURE: All outputs are now organized in date-based folders (MM_DD_YYYY)
+This helps keep your strategy research organized by day!
+
 Remember: Past performance doesn't guarantee future results!
 """
 
 # Model Configuration
-# Each agent can use a different model type and name
+# Using Ollama's deepseek-r1 for all agents - shows thinking process with <think> tags
 RESEARCH_CONFIG = {
-    "type": "claude",
-    "name": "claude-3-haiku-20240307"  # Fast reasoning model for research
+    "type": "ollama",
+    "name": "deepseek-r1"  # Shows thinking process for deep research
 }
 
 BACKTEST_CONFIG = {
-    "type": "openai",
-    "name": "o3-mini",             # More capable model for complex backtest creation
-    "reasoning_effort": "high"      # Maximum reasoning for O3 models
+    "type": "ollama", 
+    "name": "deepseek-r1"  # Shows thinking process for backtest creation
 }
 
 DEBUG_CONFIG = {
-    "type": "openai",
-    "name": "o3-mini",             # Technical debugging with reasoning capabilities
-    "reasoning_effort": "high"      # Maximum reasoning for O3 models
+    "type": "ollama",
+    "name": "deepseek-r1"  # Shows thinking process for debugging
 }
 
 PACKAGE_CONFIG = {
-    "type": "groq",
-    "name": "mixtral-8x7b-32768"  # Fast model for package optimization
+    "type": "ollama",
+    "name": "deepseek-r1"  # Shows thinking process for package optimization
 }
 
 # DeepSeek Model Selection per Agent
-# Options for each: 
-# - "deepseek-chat" (DeepSeek's V3 model - fast & efficient)
-# - "deepseek-reasoner" (DeepSeek's R1 reasoning model)
-# - "0" (Use config.py's AI_MODEL setting)
-RESEARCH_MODEL = "0"  # Analyzes strategies thoroughly
-BACKTEST_MODEL = "0"  # Creative in implementing strategies
-DEBUG_MODEL = "0"     # Careful code analysis
-PACKAGE_MODEL = "0"   # Optimizes package imports and dependencies
+# "gemma:2b",     # Google's Gemma 2B model
+#         "llama3.2",
+# Using Ollama's deepseek-r1 for all agents
+RESEARCH_MODEL = "deepseek-r1"  # Analyzes strategies thoroughly
+BACKTEST_MODEL = "deepseek-r1"  # Creative in implementing strategies
+DEBUG_MODEL = "deepseek-r1"     # Careful code analysis
+PACKAGE_MODEL = "llama3.2"   # Optimizes package imports and dependencies
 
 # Agent Prompts
 
@@ -263,20 +265,25 @@ from src.models import model_factory
 # DeepSeek Configuration
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 
+# Get today's date for organizing outputs
+TODAY_DATE = datetime.now().strftime("%m_%d_%Y")
+
 # Update data directory paths
 PROJECT_ROOT = Path(__file__).parent.parent  # Points to src/
 DATA_DIR = PROJECT_ROOT / "data/rbi"
-RESEARCH_DIR = DATA_DIR / "research"
-BACKTEST_DIR = DATA_DIR / "backtests"
-PACKAGE_DIR = DATA_DIR / "backtests_package"
-FINAL_BACKTEST_DIR = DATA_DIR / "backtests_final"
-CHARTS_DIR = DATA_DIR / "charts"  # New directory for HTML charts
+TODAY_DIR = DATA_DIR / TODAY_DATE  # Today's date folder
+RESEARCH_DIR = TODAY_DIR / "research"
+BACKTEST_DIR = TODAY_DIR / "backtests"
+PACKAGE_DIR = TODAY_DIR / "backtests_package"
+FINAL_BACKTEST_DIR = TODAY_DIR / "backtests_final"
+CHARTS_DIR = TODAY_DIR / "charts"  # New directory for HTML charts
 
 # Create main directories if they don't exist
-for dir in [DATA_DIR, RESEARCH_DIR, BACKTEST_DIR, PACKAGE_DIR, FINAL_BACKTEST_DIR, CHARTS_DIR]:
+for dir in [DATA_DIR, TODAY_DIR, RESEARCH_DIR, BACKTEST_DIR, PACKAGE_DIR, FINAL_BACKTEST_DIR, CHARTS_DIR]:
     dir.mkdir(parents=True, exist_ok=True)
 
 print(f"📂 Using RBI data directory: {DATA_DIR}")
+print(f"📅 Today's date folder: {TODAY_DATE}")
 print(f"📂 Research directory: {RESEARCH_DIR}")
 print(f"📂 Backtest directory: {BACKTEST_DIR}")
 print(f"📂 Package directory: {PACKAGE_DIR}")
@@ -334,22 +341,20 @@ def chat_with_model(system_prompt, user_content, model_config):
         cprint(f"📝 System prompt length: {len(system_prompt)} chars", "cyan")
         cprint(f"📝 User content length: {len(user_content)} chars", "cyan")
 
-        # For OpenAI O3 models, handle reasoning effort
-        if model_config["type"] == "openai" and model_config["name"].startswith('o3'):
-            # Get reasoning effort from config or default to medium
-            reasoning_effort = model_config.get("reasoning_effort", "medium")
-            juice_emoji = {"low": "🥤", "medium": "⚡️", "high": "🚀"}
-            
-            cprint(f"🧠 Using O3 model with {reasoning_effort.upper()} reasoning capabilities... {juice_emoji[reasoning_effort]}", "cyan")
-            cprint(f"🌙 Moon Dev's juice level: {reasoning_effort.upper()}! ✨", "yellow")
-            
-            # Combine system prompt and user content for O3
-            combined_prompt = f"{system_prompt}\n\n{user_content}"
+        # For Ollama models, handle response differently
+        if model_config["type"] == "ollama":
             response = model.generate_response(
-                system_prompt="",  # O3 doesn't use system prompts
-                user_content=combined_prompt,
-                reasoning_effort=reasoning_effort  # Use configured reasoning effort
+                system_prompt=system_prompt,
+                user_content=user_content,
+                temperature=AI_TEMPERATURE
             )
+            # Handle string response from Ollama
+            if isinstance(response, str):
+                return response
+            # Handle object response
+            if hasattr(response, 'content'):
+                return response.content
+            return str(response)
         else:
             # For other models, use standard parameters
             response = model.generate_response(
@@ -358,25 +363,21 @@ def chat_with_model(system_prompt, user_content, model_config):
                 temperature=AI_TEMPERATURE,
                 max_tokens=AI_MAX_TOKENS
             )
+            if not response:
+                cprint("❌ Model returned None response", "red")
+                return None
+                
+            if not hasattr(response, 'content'):
+                cprint(f"❌ Response missing content attribute. Response type: {type(response)}", "red")
+                cprint(f"Response attributes: {dir(response)}", "yellow")
+                return None
 
-        if not response:
-            cprint("❌ Model returned None response", "red")
-            return None
-            
-        if not hasattr(response, 'content'):
-            cprint(f"❌ Response missing content attribute. Response type: {type(response)}", "red")
-            cprint(f"Response attributes: {dir(response)}", "yellow")
-            return None
+            content = response.content
+            if not content or len(content.strip()) == 0:
+                cprint("❌ Model returned empty content", "red")
+                return None
 
-        content = response.content
-        if not content or len(content.strip()) == 0:
-            cprint("❌ Model returned empty content", "red")
-            return None
-
-        cprint("📥 Received response from AI!", "green")
-        cprint(f"✨ Response length: {len(content)} characters", "cyan")
-        cprint(f"📄 Response preview: {content[:200]}...", "yellow")
-        return content
+            return content
 
     except Exception as e:
         cprint(f"❌ Error in AI chat: {str(e)}", "red")
@@ -466,6 +467,58 @@ def run_with_animation(func, agent_name, *args, **kwargs):
         stop_animation.set()
         animation_thread.join()
 
+def clean_model_output(output, content_type="text"):
+    """Clean model output by removing thinking tags and extracting code from markdown
+    
+    Args:
+        output (str): Raw model output
+        content_type (str): Type of content to extract ('text', 'code')
+        
+    Returns:
+        str: Cleaned output
+    """
+    cleaned_output = output
+    
+    # Step 1: Remove thinking tags if present
+    if "<think>" in output and "</think>" in output:
+        cprint(f"🧠 Detected DeepSeek-R1 thinking tags, cleaning...", "yellow")
+        
+        # First try: Get everything after the last </think> tag
+        clean_content = output.split("</think>")[-1].strip()
+        
+        # If that doesn't work, try removing all <think>...</think> blocks
+        if not clean_content:
+            import re
+            clean_content = re.sub(r'<think>.*?</think>', '', output, flags=re.DOTALL).strip()
+            
+        if clean_content:
+            cleaned_output = clean_content
+            cprint("✅ Successfully removed thinking tags", "green")
+    
+    # Step 2: If code content, extract from markdown code blocks
+    if content_type == "code" and "```" in cleaned_output:
+        cprint("🔍 Extracting code from markdown blocks...", "yellow")
+        
+        try:
+            import re
+            # First look for python blocks
+            code_blocks = re.findall(r'```python\n(.*?)\n```', cleaned_output, re.DOTALL)
+            
+            # If no python blocks, try any code blocks
+            if not code_blocks:
+                code_blocks = re.findall(r'```(?:python)?\n(.*?)\n```', cleaned_output, re.DOTALL)
+                
+            if code_blocks:
+                # Join multiple code blocks with newlines between them
+                cleaned_output = "\n\n".join(code_blocks)
+                cprint("✅ Successfully extracted code from markdown", "green")
+            else:
+                cprint("⚠️ No code blocks found in markdown", "yellow")
+        except Exception as e:
+            cprint(f"❌ Error extracting code: {str(e)}", "red")
+    
+    return cleaned_output
+
 def research_strategy(content):
     """Research Agent: Analyzes and creates trading strategy"""
     cprint("\n🔍 Starting Research Agent...", "cyan")
@@ -480,13 +533,38 @@ def research_strategy(content):
     )
     
     if output:
+        # Clean the output to remove thinking tags
+        output = clean_model_output(output, "text")
+        
         # Extract strategy name from output
         strategy_name = "UnknownStrategy"  # Default name
         if "STRATEGY_NAME:" in output:
-            strategy_name = output.split("STRATEGY_NAME:")[1].split("\n")[0].strip()
-            # Clean up strategy name to be file-system friendly
-            strategy_name = re.sub(r'[^\w\s-]', '', strategy_name)
-            strategy_name = re.sub(r'[\s]+', '', strategy_name)
+            try:
+                # Split by the STRATEGY_NAME: marker and get the text after it
+                name_section = output.split("STRATEGY_NAME:")[1].strip()
+                # Take the first line or up to the next section marker
+                if "\n\n" in name_section:
+                    strategy_name = name_section.split("\n\n")[0].strip()
+                else:
+                    strategy_name = name_section.split("\n")[0].strip()
+                    
+                # Clean up strategy name to be file-system friendly
+                strategy_name = re.sub(r'[^\w\s-]', '', strategy_name)
+                strategy_name = re.sub(r'[\s]+', '', strategy_name)
+                
+                cprint(f"✅ Successfully extracted strategy name: {strategy_name}", "green")
+            except Exception as e:
+                cprint(f"⚠️ Error extracting strategy name: {str(e)}", "yellow")
+                cprint(f"🔄 Using default name: {strategy_name}", "yellow")
+        else:
+            cprint("⚠️ No STRATEGY_NAME found in output, using default", "yellow")
+            
+            # Try to generate a name based on key terms in the output
+            import random
+            adjectives = ["Adaptive", "Dynamic", "Quantum", "Neural", "Fractal", "Momentum", "Harmonic", "Volatility"]
+            nouns = ["Breakout", "Oscillator", "Reversal", "Momentum", "Divergence", "Scalper", "Crossover", "Arbitrage"]
+            strategy_name = f"{random.choice(adjectives)}{random.choice(nouns)}"
+            cprint(f"🎲 Generated random strategy name: {strategy_name}", "yellow")
         
         # Save research output
         filepath = RESEARCH_DIR / f"{strategy_name}_strategy.txt"
@@ -511,6 +589,9 @@ def create_backtest(strategy, strategy_name="UnknownStrategy"):
     )
     
     if output:
+        # Clean the output and extract code from markdown
+        output = clean_model_output(output, "code")
+        
         filepath = BACKTEST_DIR / f"{strategy_name}_BT.py"
         with open(filepath, 'w') as f:
             f.write(output)
@@ -536,9 +617,8 @@ def debug_backtest(backtest_code, strategy=None, strategy_name="UnknownStrategy"
     )
     
     if output:
-        code_match = re.search(r'```python\n(.*?)\n```', output, re.DOTALL)
-        if code_match:
-            output = code_match.group(1)
+        # Clean the output and extract code from markdown
+        output = clean_model_output(output, "code")
             
         filepath = FINAL_BACKTEST_DIR / f"{strategy_name}_BTFinal.py"
         with open(filepath, 'w') as f:
@@ -561,9 +641,8 @@ def package_check(backtest_code, strategy_name="UnknownStrategy"):
     )
     
     if output:
-        code_match = re.search(r'```python\n(.*?)\n```', output, re.DOTALL)
-        if code_match:
-            output = code_match.group(1)
+        # Clean the output and extract code from markdown
+        output = clean_model_output(output, "code")
             
         filepath = PACKAGE_DIR / f"{strategy_name}_PKG.py"
         with open(filepath, 'w') as f:
@@ -614,6 +693,7 @@ def process_trading_idea(idea: str) -> None:
     print("\n🚀 Moon Dev's RBI Agent Processing New Idea!")
     print("🌟 Let's find some alpha in the chaos!")
     print(f"📝 Processing idea: {idea[:100]}...")
+    print(f"📅 Saving results to today's folder: {TODAY_DATE}")
     
     try:
         # Step 1: Extract content from the idea
@@ -688,6 +768,7 @@ def process_trading_idea(idea: str) -> None:
 
 def main():
     """Main function to process ideas from file"""
+    # We keep ideas.txt in the main RBI directory, not in the date folder
     ideas_file = DATA_DIR / "ideas.txt"
     
     if not ideas_file.exists():
@@ -732,6 +813,8 @@ def main():
 if __name__ == "__main__":
     try:
         cprint(f"\n🌟 Moon Dev's RBI Agent Starting Up!", "green")
+        cprint(f"📅 Today's Date: {TODAY_DATE} - All outputs will be saved in this folder", "magenta")
+        cprint(f"🧠 DeepSeek-R1 thinking tags will be automatically removed from outputs", "magenta")
         cprint("\n🤖 Model Configurations:", "cyan")
         cprint(f"📚 Research: {RESEARCH_CONFIG['type']} - {RESEARCH_CONFIG['name']}", "cyan")
         cprint(f"📊 Backtest: {BACKTEST_CONFIG['type']} - {BACKTEST_CONFIG['name']}", "cyan")
