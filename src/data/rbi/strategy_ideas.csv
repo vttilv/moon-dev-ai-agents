@@ -155,3 +155,12 @@ timestamp,model,idea
 2025-03-13 11:08:10,ollama-gemma:2b,Cross-asset volatility arbitrage between Bitcoin and Ethereum
 2025-03-13 11:08:25,ollama-gemma:2b,Combining volatility and order book dynamics for alpha generation.
 2025-03-13 11:08:39,ollama-gemma:2b,Volatility-Based Trading Strategy:
+2025-03-13 11:09:11,ollama-DeepSeek-R1:latest,Enter trades when RSI shows bearish divergence followed by a price break higher while volume spikes indicating heightened interest in a fractal price pattern formation.
+2025-03-13 11:09:51,ollama-DeepSeek-R1:latest,"Enter trades when 2-period RSI diverges below price, coinciding with bearish 14-period RSI divergence on a short-term chart with decreasing volume, using Guppy Multiple Moving Averages for confirmation and exiting on ATR multiples."
+2025-03-13 11:10:06,ollama-gemma:2b,Utilizing Statistical Arbitrage Opportunities in Option Spreads
+2025-03-13 11:10:21,ollama-llama3.2:latest,A statistical arbitrage approach that targets co-integration breaks between stock price movements in adjacent sectors by entering long on overbought stocks from underperforming industries while shorting vice versa.
+2025-03-13 11:10:37,ollama-llama3.2:latest,Uncover hidden value by combining order flow data with sentiment analysis to identify asymmetric price movements triggered by contradictory institutional and retail sentiments.
+2025-03-13 11:10:52,ollama-gemma:2b,Long-term equity short-selling with trend-following indicators:
+2025-03-13 11:11:38,ollama-DeepSeek-R1:latest,A machine learning model predicts upcoming volume spikes in large tick assets by analyzing order book imbalances and execution rate patterns.
+2025-03-13 11:11:55,ollama-llama3.2:latest,"Utilize the 'Volume Convergence' indicator by calculating the ratio of intraday high-low range to daily high-low range, entering long positions when volume converges with the previous bar's convergence level while exceeding the current session's open interest."
+2025-03-13 11:12:10,ollama-gemma:2b,Arbitrage on price discrepancies between liquid and illiquid cryptocurrency markets.

@@ -154,3 +154,12 @@ Algorithmic Arbitrage Strategy based on Volatility Patterns and Order Flow
 Cross-asset volatility arbitrage between Bitcoin and Ethereum
 Combining volatility and order book dynamics for alpha generation.
 Volatility-Based Trading Strategy:
+Enter trades when RSI shows bearish divergence followed by a price break higher while volume spikes indicating heightened interest in a fractal price pattern formation.
+Enter trades when 2-period RSI diverges below price, coinciding with bearish 14-period RSI divergence on a short-term chart with decreasing volume, using Guppy Multiple Moving Averages for confirmation and exiting on ATR multiples.
+Utilizing Statistical Arbitrage Opportunities in Option Spreads
+A statistical arbitrage approach that targets co-integration breaks between stock price movements in adjacent sectors by entering long on overbought stocks from underperforming industries while shorting vice versa.
+Uncover hidden value by combining order flow data with sentiment analysis to identify asymmetric price movements triggered by contradictory institutional and retail sentiments.
+Long-term equity short-selling with trend-following indicators:
+A machine learning model predicts upcoming volume spikes in large tick assets by analyzing order book imbalances and execution rate patterns.
+Utilize the 'Volume Convergence' indicator by calculating the ratio of intraday high-low range to daily high-low range, entering long positions when volume converges with the previous bar's convergence level while exceeding the current session's open interest.
+Arbitrage on price discrepancies between liquid and illiquid cryptocurrency markets.
