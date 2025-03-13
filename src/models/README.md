@@ -58,6 +58,7 @@ Preview Models:
 ### DeepSeek Models
 - `deepseek-chat`: Fast chat model (Good for conversational tasks)
 - `deepseek-reasoner`: Enhanced reasoning model (Better for complex problem-solving)
+- `deepseek-r1`: DeepSeek's first-generation reasoning model (Excellent for trading strategies)
 
 ### Local Ollama: Free, Fast, Private LLMs 🚀
 
@@ -66,14 +67,14 @@ To get started with Ollama:
 2. Start the server: `ollama serve`
 3. Pull our models:
    ```bash
-   ollama pull deepseek-r1    # DeepSeek R1 - shows thinking process
-   ollama pull gemma:2b       # Google's Gemma 2B - fast responses
-   ollama pull llama3.2       # Meta's Llama 3.2 - balanced performance
+   ollama pull deepseek-r1      # DeepSeek R1 7B - shows thinking process
+   ollama pull gemma:2b         # Google's Gemma 2B - fast responses
+   ollama pull llama3.2         # Meta's Llama 3.2 - balanced performance
    ```
 4. Check they're ready: `ollama list`
 
 Available Models:
-- `deepseek-r1`: Best for complex reasoning, shows thinking process with <think> tags
+- `deepseek-r1`: Good for complex reasoning (7B parameters), shows thinking process with <think> tags
 - `gemma:2b`: Fast and efficient for simple tasks, great for high-volume processing
 - `llama3.2`: Balanced model good for most tasks, especially good at following instructions
 
@@ -88,14 +89,17 @@ Usage Example:
 ```python
 from src.models import model_factory
 
-# Initialize with Llama 3.2
+# Initialize with Llama 3.2 for balanced performance
 model = factory.get_model("ollama", "llama3.2")
 
-# Or use Gemma for faster responses
+# Or use DeepSeek R1 for complex reasoning
+model = factory.get_model("ollama", "deepseek-r1")
+
+# Or Gemma for faster responses
 model = factory.get_model("ollama", "gemma:2b")
 
-# Or DeepSeek for complex reasoning
-model = factory.get_model("ollama", "deepseek-r1")
+# For the most powerful reasoning, use DeepSeek API
+model = factory.get_model("deepseek", "deepseek-reasoner")
 ```
 
 Interesting models for future use:

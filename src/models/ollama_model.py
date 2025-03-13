@@ -15,9 +15,9 @@ class OllamaModel(BaseModel):
     
     # Available Ollama models - can be expanded based on what's installed locally
     AVAILABLE_MODELS = [
-        "deepseek-r1",  # DeepSeek R1 through Ollama
-        "gemma:2b",     # Google's Gemma 2B model
-        "llama3.2",     # Meta's Llama 3.2 model - fast and efficient
+        "deepseek-r1",      # DeepSeek R1 through Ollama (7B by default)
+        "gemma:2b",         # Google's Gemma 2B model
+        "llama3.2",         # Meta's Llama 3.2 model - fast and efficient
         # implement your own local models through hugging face/ollama here
     ]
     
@@ -123,4 +123,32 @@ class OllamaModel(BaseModel):
             return None
     
     def __str__(self):
-        return f"OllamaModel(model={self.model_name})" 
+        return f"OllamaModel(model={self.model_name})"
+
+    def get_model_parameters(self, model_name=None):
+        """Get the parameter count for a specific model
+        
+        Args:
+            model_name: Name of the model to check (defaults to self.model_name)
+            
+        Returns:
+            String with parameter count (e.g., "7B", "13B") or None if not available
+        """
+        if model_name is None:
+            model_name = self.model_name
+            
+        try:
+            # For specific known models
+            known_models = {
+                "deepseek-r1": "7B",
+                "gemma:2b": "2B",
+                "llama3.2": "70B"
+            }
+            
+            if model_name in known_models:
+                return known_models[model_name]
+                
+            return "Unknown"
+        except Exception as e:
+            cprint(f"❌ Error getting model parameters: {str(e)}", "red")
+            return None 

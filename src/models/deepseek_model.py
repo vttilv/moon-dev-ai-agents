@@ -13,7 +13,8 @@ class DeepSeekModel(BaseModel):
     AVAILABLE_MODELS = {
         "deepseek-chat": "Fast chat model",
         "deepseek-coder": "Code-specialized model",
-        "deepseek-reasoner": "Enhanced reasoning model"
+        "deepseek-reasoner": "Enhanced reasoning model with thinking process",
+        "deepseek-r1": "DeepSeek's first-generation reasoning model"
     }
     
     def __init__(self, api_key: str, model_name: str = "deepseek-chat", base_url: str = "https://api.deepseek.com", **kwargs):

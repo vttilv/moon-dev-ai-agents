@@ -35,35 +35,35 @@ Remember: Past performance doesn't guarantee future results!
 """
 
 # Model Configuration
-# Using Ollama's deepseek-r1 for all agents - shows thinking process with <think> tags
+# Using a mix of Ollama models and DeepSeek API
 RESEARCH_CONFIG = {
     "type": "ollama",
-    "name": "deepseek-r1"  # Shows thinking process for deep research
+    "name": "llama3.2"  # Using Llama 3.2 for research
 }
 
 BACKTEST_CONFIG = {
-    "type": "ollama", 
-    "name": "deepseek-r1"  # Shows thinking process for backtest creation
+    "type": "deepseek", 
+    "name": "deepseek-reasoner"  # Using DeepSeek API for backtesting
 }
 
 DEBUG_CONFIG = {
     "type": "ollama",
-    "name": "deepseek-r1"  # Shows thinking process for debugging
+    "name": "deepseek-r1"  # Using Ollama's DeepSeek-R1 for debugging
 }
 
 PACKAGE_CONFIG = {
     "type": "ollama",
-    "name": "deepseek-r1"  # Shows thinking process for package optimization
+    "name": "llama3.2"  # Using Llama 3.2 for package optimization
 }
 
 # DeepSeek Model Selection per Agent
 # "gemma:2b",     # Google's Gemma 2B model
 #         "llama3.2",
-# Using Ollama's deepseek-r1 for all agents
-RESEARCH_MODEL = "deepseek-r1"  # Analyzes strategies thoroughly
-BACKTEST_MODEL = "deepseek-r1"  # Creative in implementing strategies
-DEBUG_MODEL = "deepseek-r1"     # Careful code analysis
-PACKAGE_MODEL = "llama3.2"   # Optimizes package imports and dependencies
+# Using a mix of models for different tasks
+RESEARCH_MODEL = "llama3.2"           # Llama 3.2 for research
+BACKTEST_MODEL = "deepseek-reasoner"  # DeepSeek API for backtesting
+DEBUG_MODEL = "deepseek-r1"           # Ollama DeepSeek-R1 for debugging
+PACKAGE_MODEL = "llama3.2"            # Llama 3.2 for package optimization
 
 # Agent Prompts
 
@@ -259,6 +259,7 @@ from termcolor import cprint
 import threading
 import itertools
 import sys
+import hashlib  # Added for idea hashing
 from src.config import *  # Import config settings including AI_MODEL
 from src.models import model_factory
 
@@ -277,6 +278,7 @@ BACKTEST_DIR = TODAY_DIR / "backtests"
 PACKAGE_DIR = TODAY_DIR / "backtests_package"
 FINAL_BACKTEST_DIR = TODAY_DIR / "backtests_final"
 CHARTS_DIR = TODAY_DIR / "charts"  # New directory for HTML charts
+PROCESSED_IDEAS_LOG = DATA_DIR / "processed_ideas.log"  # New file to track processed ideas
 
 # Create main directories if they don't exist
 for dir in [DATA_DIR, TODAY_DIR, RESEARCH_DIR, BACKTEST_DIR, PACKAGE_DIR, FINAL_BACKTEST_DIR, CHARTS_DIR]:
@@ -688,6 +690,43 @@ def get_idea_content(idea_url: str) -> str:
         print(f"❌ Error extracting content: {str(e)}")
         raise
 
+def get_idea_hash(idea: str) -> str:
+    """Generate a unique hash for an idea to track processing status"""
+    # Create a hash of the idea to use as a unique identifier
+    return hashlib.md5(idea.encode('utf-8')).hexdigest()
+
+def is_idea_processed(idea: str) -> bool:
+    """Check if an idea has already been processed"""
+    if not PROCESSED_IDEAS_LOG.exists():
+        return False
+        
+    idea_hash = get_idea_hash(idea)
+    
+    with open(PROCESSED_IDEAS_LOG, 'r') as f:
+        processed_hashes = [line.strip().split(',')[0] for line in f if line.strip()]
+        
+    return idea_hash in processed_hashes
+
+def log_processed_idea(idea: str, strategy_name: str = "Unknown") -> None:
+    """Log an idea as processed with timestamp and strategy name"""
+    idea_hash = get_idea_hash(idea)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Create the log file if it doesn't exist
+    if not PROCESSED_IDEAS_LOG.exists():
+        PROCESSED_IDEAS_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with open(PROCESSED_IDEAS_LOG, 'w') as f:
+            f.write("# Moon Dev's RBI Agent - Processed Ideas Log 🌙\n")
+            f.write("# Format: hash,timestamp,strategy_name,idea_snippet\n")
+    
+    # Append the processed idea to the log
+    with open(PROCESSED_IDEAS_LOG, 'a') as f:
+        # Truncate idea if too long for the log
+        idea_snippet = idea[:100] + ('...' if len(idea) > 100 else '')
+        f.write(f"{idea_hash},{timestamp},{strategy_name},{idea_snippet}\n")
+    
+    cprint(f"📝 Idea logged as processed: {idea_hash}", "green")
+
 def process_trading_idea(idea: str) -> None:
     """Process a single trading idea completely independently"""
     print("\n🚀 Moon Dev's RBI Agent Processing New Idea!")
@@ -713,6 +752,9 @@ def process_trading_idea(idea: str) -> None:
             return
             
         print(f"🏷️ Strategy Name: {strategy_name}")
+        
+        # Log the idea as processed once we have a strategy name
+        log_processed_idea(idea, strategy_name)
         
         # Save research output
         research_file = RESEARCH_DIR / f"{strategy_name}_strategy.txt"
@@ -785,7 +827,22 @@ def main():
     total_ideas = len(ideas)
     cprint(f"\n🎯 Found {total_ideas} trading ideas to process", "cyan")
     
+    # Count how many ideas have already been processed
+    already_processed = sum(1 for idea in ideas if is_idea_processed(idea))
+    new_ideas = total_ideas - already_processed
+    
+    cprint(f"🔍 Status: {already_processed} already processed, {new_ideas} new ideas", "cyan")
+    
     for i, idea in enumerate(ideas, 1):
+        # Check if this idea has already been processed
+        if is_idea_processed(idea):
+            cprint(f"\n{'='*50}", "red")
+            cprint(f"⏭️  SKIPPING idea {i}/{total_ideas} - ALREADY PROCESSED", "red", attrs=['reverse'])
+            idea_snippet = idea[:100] + ('...' if len(idea) > 100 else '')
+            cprint(f"📝 Idea: {idea_snippet}", "red")
+            cprint(f"{'='*50}\n", "red")
+            continue
+            
         cprint(f"\n{'='*50}", "yellow")
         cprint(f"🌙 Processing idea {i}/{total_ideas}", "cyan")
         cprint(f"📝 Idea content: {idea[:100]}{'...' if len(idea) > 100 else ''}", "yellow")
@@ -815,6 +872,7 @@ if __name__ == "__main__":
         cprint(f"\n🌟 Moon Dev's RBI Agent Starting Up!", "green")
         cprint(f"📅 Today's Date: {TODAY_DATE} - All outputs will be saved in this folder", "magenta")
         cprint(f"🧠 DeepSeek-R1 thinking tags will be automatically removed from outputs", "magenta")
+        cprint(f"📋 Processed ideas log: {PROCESSED_IDEAS_LOG}", "magenta")
         cprint("\n🤖 Model Configurations:", "cyan")
         cprint(f"📚 Research: {RESEARCH_CONFIG['type']} - {RESEARCH_CONFIG['name']}", "cyan")
         cprint(f"📊 Backtest: {BACKTEST_CONFIG['type']} - {BACKTEST_CONFIG['name']}", "cyan")

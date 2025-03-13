@@ -1,137 +1,158 @@
 import pandas as pd
 import numpy as np
+from talib import abstract as ta
 from datetime import datetime, timedelta
-import backtrader as bt
-import talib as ta
-import random
 
-class Backtester:
-    """Backtester class with data handling and indicators"""
-    
-    def __init__(self, data_path):
-        self.data = pd.read_csv(data_path)
-        self.data.columns = self.data.columns.str.strip().str.lower()
-        self.data = self.data.drop(columns=[col for col in self.data.columns if 'unnamed' in col.lower()])
-        
-        # Ensure proper column mapping
-        required_columns = ['open', 'high', 'low', 'close', 'volume']
-        self.data = self.data[required_columns]
-        
-    def getindicators(self):
-        """Calculate indicators"""
-        close = self.data['close'].values
-        volume = self.data['volume'].values
-        
-        # MACD Oscillator (Adaptive)
-        macd, macdsignal, macdhist = ta.MACD(close, fastperiod=20, slowperiod=30, signalperiod=10)
-        
-        # Machine Learning Model predictions
-        n = len(self.data)
-        mlm_predictions = np.random.uniform(-1, 1, size=n)  # Random dummy data
-        
-        return macd, macdsignal, macdhist, mlm_predictions
+# Import data handling functions from backtesting.py
+from backtesting import Backtest
 
-class AdaptiveDivergence(bt.Strategy):
-    """Adaptive Divergence trading strategy"""
-    
-    params = (
-        ('macd_length', 20),
-        ('mlm_threshold', 0.5),
-        ('risk_threshold', 10),
-        ('stop_loss_units', 5)
-    )
-    
-    def __init__(self):
-        self macd_length = self.params['macd_length']
-        self.mlm_threshold = self.params['mlm_threshold']
-        self.risk_threshold = self.params['risk_threshold']
-        self.stop_loss_units = self.params['stop_loss_units']
+# Add Moon Dev themed imports and logging
+from moon.dev.Enums import Strategy, Trade
+from moon.dev.Log import logger
+
+class AdaptiveDivergence(Strategy):
+    def __init__(self, rsi_period=14, ema_period=20, dea_period=9, macd_period=26, macdo_period=9):
+        self.rsi_period = rsi_period
+        self.ema_period = ema_period
+        self.dea_period = dea_period
+        self.macd_period = macd_period
+        self.macdo_period = macdo_period
+
+    def calculateIndicators(self, data):
+        # RSI
+        rsi = ta.RSI(data['close'], timeperiod=self.rsi_period)
         
-        # Initialize indicators
-        self.macd, self.macdsignal, self.macdhist = self.getindicators()
+        # EMA
+        ema_short = self.I(ta.EMA, data['close'], timeperiod=self.ema_period)
+        ema_long = self.I(ta.EMA, data['close'], timeperiod=self.ema_period*2)
         
-    def getmacd(self):
-        """Get MACD values"""
-        return self(macd=self.macd, macdsignal=self.macdsignal)
+        # DEA (Difference between 2 EMAs)
+        dea = self.I(ta.EMA, ema_short, timeperiod=self.dea_period)
+        
+        macd, macdsignal, macdhist = self.I(ta.MACD, data['close'], 
+                                             fastperiod=self.macd_period,
+                                             slowperiod=self.macdo_period,
+                                             signalperiod=9)
+        
+        # MACD Histogram (for divergence)
+        macddiv = self.I(ta.DIF, macdhist, 1)
+
+        return {
+            'RSI': rsi,
+            'EMA_Short': ema_short,
+            'EMA(Long)': ema_long,
+            'DEA': dea,
+            'MACD': macd,
+            'MACDSignal': macdsignal,
+            'MACDHist': macdhist,
+            'MACDDiff': macddiv
+        }
+
+    def populateIndicators(self, data):
+        # Calculate indicators
+        self.data = data.copy()
+        indicator_data = self.calculateIndicators(data)
+        
+        # Store calculated values in the DataFrame
+        for ind, value in indicator_data.items():
+            setattr(self, ind, value)
+
+    def setParameters(self, params):
+        self.rsi_period = params.get('rsi_period', 14)
+        self.ema_period = params.get('ema_period', 20)
+        self.dea_period = params.get('dea_period', 9)
+        self.macd_period = params.get('macd_period', 26)
+        self.macdo_period = params.get('macdo_period', 9)
+
+    def iseligible(self, data):
+        # Only proceed if we have sufficient data
+        return len(data) >= 30
     
-    def getmlm(self):
-        """Get Machine Learning Model predictions"""
-        return np.random.uniform(-1, 1, size=len(self.data))
+    def goLong(self, size=1_000_000):
+        # Calculate position size with safety
+        entry_price = self.data.iloc[-1]['close']
+        
+        # Ensure size is an integer
+        size = int(round(size))
+        
+        if size > 0:
+            stop_loss = entry_price * (1 - 0.02)  # 2% stop loss
+            take_profit = entry_price * 1.05       # 5% take profit
+            
+            logger.info(f"Going long with size: {size}, Entry Price: {entry_price}")
+            
+            return {
+                'action': 'long',
+                'size': size,
+                'enter_at': entry_price,
+                'exit_at': None,
+                'stop_loss': stop_loss,
+                'take_profit': take_profit
+            }
     
-    def __enter__(self):
-        """Initialize strategy variables"""
-        self.position = None
-        self Entered = False
+    def goShort(self, size=1_000_000):
+        entry_price = self.data.iloc[-1]['close']
         
-        # Initialize indicators reference
-        self.macd_ref = None
-        self.macdsignal_ref = None
-        self.macdhist_ref = None
+        # Ensure size is an integer
+        size = int(round(size))
         
-        return self
+        if size > 0:
+            stop_loss = entry_price * (1 + 0.02)  # 2% stop loss
+            take_profit = entry_price * 0.95       # 5% take profit
+            
+            logger.info(f"Going short with size: {size}, Entry Price: {entry_price}")
+            
+            return {
+                'action': 'short',
+                'size': size,
+                'enter_at': entry_price,
+                'exit_at': None,
+                'stop_loss': stop_loss,
+                'take_profit': take_profit
+            }
     
     def next(self):
-        """Next iteration logic"""
-        if not selfpositioned() or position().size != 1:
+        # Check if we have enough bars to use indicators
+        if len(self.data) < 30:
             return
-            
-        # Calculate divergence percentage
-        close_diff = (self.data['close'][-1] - self.data['close'][-2]) / self.data['close'][-2]
-        macd_diff = (self.macd[-1] - self.macd[-2]) / self.macd[-2]
         
-        divergence_percent = abs(close_diff - macd_diff) * 100
+        # Simplified logic - you can expand this based on your strategy rules
+        current_price = self.data.iloc[-1]['close']
         
-        # Get ML predictions for current period
-        mlm_pred = self.mlmpreds[-1 if len(self.mlmpreds) > 0 else 0]
+        # Example long entry condition (RSI divergence)
+        rsi = self.RSI[-1]
+        macddiv = self.MACDDiff[-1]  # Simplified MACD divergence logic
         
-        if divergence_percent > self.mlm_threshold and (mlm_pred > 0 or self.macdsignal[-2] < self.macdhist[-2]):
-            if not self positioned() or self.position.size != 1:
-                return
+        if (rsi > 50 and rsi < self.rsi_period - rsi) and (macddiv > 0):
+            # Potential long signal
+            logger.info(f"Long potential: RSI {rsi}, MACD Diff {macddiv}")
             
-            # Calculate stop loss
-            stop_loss = self.data['close'][-1] * (1 - (self.risk_threshold / 100))
+            # Execute long trade with calculated size if eligible
+            if self.iseligible(self.data):
+                return self.goLong(size=1_000_000)
+        
+        # Example short entry condition (RSI divergence in the opposite direction)
+        rsi = self.RSI[-1]
+        macddiv = self.MACDDiff[-1]  # Simplified MACD divergence logic
+        
+        if (rsi < 50 and rsi > self.rsi_period - rsi) and (macddiv < 0):
+            logger.info(f"Short potential: RSI {rsi}, MACD Diff {macddiv}")
             
-            # Place stop loss order
-            self.position.close()
-            
-        elif divergence_percent < -self.mlm_threshold and (mlm_pred < 0 or self.macdsignal[-2] > self.macdhist[-2]):
-            if not self.positioned() or self.position.size != 1:
-                return
-            
-            # Calculate stop loss
-            stop_loss = self.data['close'][-1] * (1 + (self.risk_threshold / 100))
-            
-            # Place stop loss order
-            self.position.close()
+            # Execute short trade with calculated size if eligible
+            if self.iseligible(self.data):
+                return self.goShort(size=1_000_000)
     
-    def run(self):
-        """Run the backtester"""
-        print("\nStarting backtesting...")
-        start = datetime.now() - timedelta(days=365)
-        
-        # Initialize backtester
-        bt = Backtester(self.data_path)
-        test cerebro = bt.Cerebro()
-        test cerebro.loadstrats(AdaptiveDivergence)
-        test cerebro.addind(bt.macd)
-        test cerebro.addind(bt.macdsignal)
-        test cerebro.addind(bt.macdhist)
-        test cerebro.addind(bt.mlmpreds)
-        
-        # Run backtester
-        stats = test cerebro.run(
-            start=start,
-            end=datetime.now(),
-            cerebro=True,
-            loglevel=bt.LOGLEVEL Lowest,
-            plot=1,
-            plot_mode='ilogy',
-            stdout=False
-        )
-        
-        print("\nBacktesting complete. Printing results...")
-        bt.printstats(stats)
-        print("\nStrategy closed.")
+    def stop(self):
+        pass
 
-if __name__ == '__main__':
-    AdaptiveDivergence().run()
+# Initialize backtester and run the strategy
+backtest = Backtest(AdaptiveDivergence, 
+                   AdaptiveDivergence.EMA(20),
+                   population_size=30,
+                   tournament_count=50,
+                   num_generations=10)
+
+result = backtest.run()
+
+if result:
+    print(f"\n\nFinal Result - {result}")

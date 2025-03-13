@@ -38,8 +38,8 @@ class ModelFactory:
         "groq": "mixtral-8x7b-32768",        # Fast Mixtral model
         "openai": "gpt-4o",                  # Latest GPT-4 Optimized
         "gemini": "gemini-2.0-flash",        # Latest Gemini model
-        "deepseek": "deepseek-chat",         # Fast chat model
-        "ollama": "llama3.2"                 # Meta's Llama 3.2 - fast and efficient
+        "deepseek": "deepseek-reasoner",     # Enhanced reasoning model
+        "ollama": "llama3.2"                 # Meta's Llama 3.2 - balanced performance
     }
     
     def __init__(self):

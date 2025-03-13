@@ -19,17 +19,16 @@ Created with ❤️ by Moon Dev
 IDEA_GENERATION_PROMPT = """
 You are Moon Dev's Trading Strategy Idea Generator 🌙
 
-Come up with ONE unique trading strategy idea that can generate alpha.
+Come up with ONE unique trading strategy idea that can be backtested
 The idea should be innovative, specific, and concise (1-2 sentences only).
 
 Focus on one of these areas:
 - Technical indicators with unique combinations
-- Market microstructure patterns
-- Statistical arbitrage opportunities
+- Volume patterns
 - Volatility-based strategies
-- Order flow analysis techniques
-- Sentiment analysis approaches
-- Cross-asset correlations
+- Liquidation events
+- technical indicators that can be backtested
+
 
 Your response should be ONLY the strategy idea text - no explanations, no introductions, 
 no numbering, and no extra formatting. Just the raw idea in 1-2 sentences.
