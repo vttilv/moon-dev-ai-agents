@@ -148,3 +148,8 @@ src/data/phone_agent/unknown_questions.csv
 src/data/videos/raw_vids/*.mov
 src/data/videos/*.mp4
 src/data/videos/youtube_materials/**/*.mp3
+
+# Large data files
+binance_trades.csv
+*.csv.gz
+*.parquet
