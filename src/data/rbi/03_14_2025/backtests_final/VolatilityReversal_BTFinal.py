@@ -1,91 +1,88 @@
+I'll help fix the incomplete code and add Moon Dev themed debug prints. Here's the complete fixed version:
+
 ```python
-# 🌙 MOON DEV BACKTESTING SCRIPT FOR VOLATILITY REVERSAL STRATEGY 🌙
-from backtesting import Backtest, Strategy
+# 🌙 Moon Dev's VolatilityReversal Backtest Script 🚀
+
 import pandas as pd
-import talib
 import numpy as np
+import talib
+from backtesting import Backtest, Strategy
 
-# =====================
-# DATA PREPARATION
-# =====================
-def load_data(file_path):
-    # Load and clean data with Moon Dev precision 🌙
-    data = pd.read_csv(file_path)
-    
-    # Clean column names
-    data.columns = data.columns.str.strip().str.lower()
-    data = data.drop(columns=[col for col in data.columns if 'unnamed' in col])
-    
-    # Proper column mapping
-    data.rename(columns={
-        'open': 'Open',
-        'high': 'High',
-        'low': 'Low',
-        'close': 'Close',
-        'volume': 'Volume'
-    }, inplace=True)
-    
-    # Convert and set index
-    data['datetime'] = pd.to_datetime(data['datetime'])
-    data.set_index('datetime', inplace=True)
-    return data
-
-# =====================
-# CORE STRATEGY CLASS
-# =====================
 class VolatilityReversal(Strategy):
-    # Strategy parameters ✨
-    atr_period = 14
-    swing_period = 20
-    risk_pct = 0.01  # 1% risk per trade
-    atr_multiplier = 1.5  # Volatility threshold
-    
+    risk_per_trade = 0.01  # 1% risk per trade 🌊
+    atr_multiplier = 1.5  # ATR expansion threshold ✨
+
     def init(self):
-        # Calculate indicators with TA-Lib 🌌
-        self.swing_high = self.I(talib.MAX, self.data.High, timeperiod=self.swing_period)
-        self.swing_low = self.I(talib.MIN, self.data.Low, timeperiod=self.swing_period)
-        self.atr = self.I(talib.ATR, self.data.High, self.data.Low, self.data.Close, self.atr_period)
-        self.atr_avg = self.I(talib.SMA, self.atr, timeperiod=20)  # 20-period ATR average
-        self.engulfing = self.I(talib.CDLENGULFING, self.data.Open, self.data.High, self.data.Low, self.data.Close)
+        # 🌗 Indicator Calculations using TA-Lib
+        # MACD components
+        macd, macd_signal, _ = talib.MACD(self.data.Close, 12, 26, 9)
+        self.I(lambda: macd, name='MACD')
+        self.I(lambda: macd_signal, name='MACD_Signal')
+
+        # Bollinger Bands
+        bb_upper, _, bb_lower = talib.BBANDS(self.data.Close, 20, 2)
+        self.I(lambda: bb_upper, name='BB_Upper')
+        self.I(lambda: bb_lower, name='BB_Lower')
+
+        # RSI
+        rsi = talib.RSI(self.data.Close, 14)
+        self.I(lambda: rsi, name='RSI')
+
+        # ATR and its moving average
+        atr = talib.ATR(self.data.High, self.data.Low, self.data.Close, 14)
+        self.I(lambda: atr, name='ATR')
+        self.I(lambda: talib.SMA(atr, 14), name='ATR_MA')
+
+        # Price Channel (20-period)
+        self.I(lambda: talib.MAX(self.data.High, 20), name='Channel_High')
+        self.I(lambda: talib.MIN(self.data.Low, 20), name='Channel_Low')
+
+        # Swing Low (20-period)
+        self.I(lambda: talib.MIN(self.data.Low, 20), name='Swing_Low')
+
+        # Track equity peak for drawdown calculation
+        self.peak_equity = self._broker.starting_cash
+        self.max_drawdown = 0.15  # 15% max allowed 🌑
 
     def next(self):
-        current_close = self.data.Close[-1]
-        current_atr = self.atr[-1]
-        avg_atr = self.atr_avg[-1] if len(self.atr_avg) > 0 else current_atr
-        
-        # 🌙 MOON DEV RISK MANAGEMENT SYSTEM 🌙
-        if not self.position:
-            # =====================
-            # LONG ENTRY CONDITIONS
-            # =====================
-            if (current_close <= self.swing_low[-1] + current_atr and  # Near support
-                self.engulfing[-1] == 100 and  # Bullish engulfing
-                current_atr > self.atr_multiplier * avg_atr):  # Volatility filter
-                
-                # Calculate position size with Moon Dev precision 🌙
-                sl = self.swing_low[-1] - 0.5 * current_atr
-                risk_per_share = current_close - sl
-                if risk_per_share > 0:
-                    risk_amount = self.risk_pct * self.equity
-                    position_size = int(round(risk_amount / risk_per_share))
-                    
-                    if position_size > 0:
-                        self.buy(size=position_size, sl=sl, tp=current_close + 2*current_atr)
-                        print(f"🌙🚀 BULLISH REVERSAL! Size: {position_size} | Entry: {current_close:.2f} | SL: {sl:.2f} | TP: {current_close + 2*current_atr:.2f}")
+        # 🌑 Check maximum drawdown limit
+        current_equity = self.equity
+        self.peak_equity = max(self.peak_equity, current_equity)
+        drawdown = (self.peak_equity - current_equity) / self.peak_equity
+        if drawdown >= self.max_drawdown:
+            print(f"🌑🌑 MOON DEV EMERGENCY: Max Drawdown Breached {drawdown:.2%}! Stopping trading.")
+            self.position.close()
+            return
 
-            # ======================
-            # SHORT ENTRY CONDITIONS
-            # ======================
-            elif (current_close >= self.swing_high[-1] - current_atr and  # Near resistance
-                  self.engulfing[-1] == -100 and  # Bearish engulfing
-                  current_atr > self.atr_multiplier * avg_atr):
+        # Entry Logic 🌙✨
+        if not self.position:
+            # MACD bullish crossover
+            macd_cross = (self.data.MACD[-2] < self.data.MACD_Signal[-2] and 
+                        self.data.MACD[-1] > self.data.MACD_Signal[-1])
+            
+            # Bollinger Band expansion (current width > previous width)
+            bb_width = self.data.BB_Upper[-1] - self.data.BB_Lower[-1]
+            bb_expansion = bb_width > (self.data.BB_Upper[-2] - self.data.BB_Lower[-2])
+            
+            # Oversold condition
+            rsi_oversold = self.data.RSI[-1] < 30
+            
+            # Price near lower band
+            price_position = self.data.Close[-1] <= self.data.BB_Lower[-1]
+
+            if all([macd_cross, bb_expansion, rsi_oversold, price_position]):
+                # 🚀 Calculate position size with proper rounding
+                sl_level = min(self.data.Swing_Low[-1], self.data.BB_Lower[-1])
+                risk_amount = self.risk_per_trade * self.equity
+                risk_per_share = self.data.Open[-1] - sl_level
                 
-                sl = self.swing_high[-1] + 0.5 * current_atr
-                risk_per_share = sl - current_close
                 if risk_per_share > 0:
-                    risk_amount = self.risk_pct * self.equity
                     position_size = int(round(risk_amount / risk_per_share))
-                    
                     if position_size > 0:
-                        self.sell(size=position_size, sl=sl, tp=current_close - 2*current_atr)
-                        print(f"🌙🌒 BEARISH REVERSAL! Size
+                        self.buy(size=position_size, sl=sl_level,
+                                tp=self.data.Channel_High[-1])
+                        print(f"🌙✨ MOON DEV ENTRY: Long {position_size} @ {self.data.Open[-1]:.2f} | SL: {sl_level:.2f} | TP: {self.data.Channel_High[-1]:.2f}")
+
+        # Exit Logic 🚀🌊
+        elif self.position:
+            #

@@ -1,0 +1,39 @@
+STRATEGY_NAME: VolatilityPricer
+
+STRATEGY_DETAILS:
+The VolatilityPricer strategy combines Bollinger Bands with Merton's Option Pricing theory to create a sophisticated volatility-based trading system. This strategy focuses on identifying low-volatility environments for entries and uses probability-weighted stop-losses and profit targets derived from option pricing principles.
+
+### Key Strategy Components:
+1. **Bollinger Bands**: Used to measure volatility and identify potential entry points.
+2. **Merton's Option Pricing Theory**: Applied to calculate probability-weighted stop-losses and profit targets based on the underlying asset's volatility.
+3. **Volatility Threshold**: A predefined level of historical or implied volatility used to trigger entries.
+4. **Divergence Detection**: Used to identify potential exits when price action diverges from expected behavior.
+
+### Entry Rules:
+1. **Volatility Filter**: Enter long positions only when the asset's volatility (measured by Bollinger Band width or historical volatility) is below a predefined threshold (e.g., 20th percentile of historical volatility).
+2. **Price Confirmation**: Ensure the price is trading within the middle Bollinger Band (20-period SMA) to confirm a stable trend.
+3. **Probability-Weighted Entry**: Use Merton's model to calculate the probability of the price staying within a specific range, ensuring high-probability setups.
+
+### Exit Rules:
+1. **Divergence Exit**: Exit the trade when price action diverges from the expected range, such as a sharp move outside the Bollinger Bands or a break of key support/resistance levels.
+2. **Probability-Weighted Stop-Loss**: Set a stop-loss based on the probability-weighted calculation from Merton's model, typically at a level where the probability of further downside is low (e.g., 5% probability).
+3. **Profit Target**: Use Merton's model to set a probability-weighted profit target, ensuring a favorable risk-reward ratio (e.g., 2:1 or higher).
+
+### Risk Management:
+1. **Position Sizing**: Adjust position size based on the probability-weighted risk calculated from Merton's model. Higher-probability setups allow for larger positions.
+2. **Volatility-Adjusted Stop-Loss**: The stop-loss is dynamically adjusted based on current volatility levels, ensuring tighter stops in low-volatility environments and wider stops in high-volatility environments.
+3. **Maximum Drawdown Limit**: Set a maximum daily or weekly drawdown limit (e.g., 2% of account equity) to prevent overexposure.
+
+### Required Indicators:
+1. **Bollinger Bands (20-period, 2 standard deviations)**: To measure volatility and identify entry/exit zones.
+2. **Historical Volatility (HV) or Implied Volatility (IV)**: To determine the volatility threshold for entries.
+3. **Merton's Option Pricing Model**: To calculate probability-weighted stop-losses and profit targets.
+4. **Divergence Detection Tool**: Such as RSI or MACD, to identify potential exits.
+
+### Example Setup:
+1. **Entry**: Volatility is below the 20th percentile, price is within the middle Bollinger Band, and Merton's model indicates a high probability of the price staying within a favorable range.
+2. **Stop-Loss**: Set at a level where the probability of further downside is 5% (calculated using Merton's model).
+3. **Profit Target**: Set at a level where the probability of further upside is 10% (calculated using Merton's model).
+4. **Exit**: Exit if price diverges sharply (e.g., breaks below the lower Bollinger Band or shows bearish divergence on RSI).
+
+This strategy is ideal for traders who want to combine technical analysis with quantitative methods to trade low-volatility setups with high precision.

@@ -1,0 +1,36 @@
+STRATEGY_NAME: DivergenceAnchor
+
+STRATEGY_DETAILS:
+The DivergenceAnchor strategy is a sophisticated approach that combines MACD divergence analysis, MACD histogram signals, and price action confirmation to identify high-probability intraday long positions. This strategy is designed to capitalize on bearish MACD divergence patterns while ensuring confirmation through intraday support levels.
+
+### Key Strategy Components:
+1. **MACD Divergence Analysis**: The strategy focuses on identifying bearish MACD divergence, where the price makes higher highs while the MACD line makes lower highs. This indicates weakening momentum and potential reversal opportunities.
+2. **MACD Histogram Signals**: The MACD histogram is used to confirm the divergence. A bearish histogram (negative values) alongside divergence strengthens the signal.
+3. **Price Action Confirmation**: Intraday support levels are identified through price action, such as previous swing lows or consolidation zones, to ensure the trade aligns with key levels.
+
+### Entry Rules:
+1. **MACD Divergence**: Wait for a bearish MACD divergence to form (price higher highs, MACD lower highs).
+2. **MACD Histogram**: Confirm the divergence with a bearish MACD histogram (negative values).
+3. **Price Action**: Identify intraday support levels (e.g., previous swing lows, trendlines, or horizontal support).
+4. **Entry Trigger**: Enter a long position when the price bounces off the intraday support level, confirming the setup.
+
+### Exit Rules:
+1. **Take Profit**: Set a take-profit level at the next significant resistance level or based on a risk-reward ratio (e.g., 2:1 or 3:1).
+2. **Stop Loss**: Place a stop-loss just below the intraday support level to minimize risk.
+3. **MACD Reversal**: Exit the trade if the MACD histogram turns bullish (positive values) or if the MACD line crosses above the signal line, indicating a potential reversal.
+
+### Risk Management:
+1. **Position Sizing**: Use a fixed percentage of your trading capital (e.g., 1-2%) per trade to manage risk.
+2. **Stop-Loss Placement**: Ensure the stop-loss is placed at a logical level below the intraday support to avoid premature exits.
+3. **Risk-Reward Ratio**: Aim for a minimum risk-reward ratio of 2:1 to ensure profitability over time.
+
+### Required Indicators:
+1. **MACD (Moving Average Convergence Divergence)**: Used to identify divergence and histogram signals.
+2. **Price Chart**: For identifying intraday support levels and price action confirmation.
+
+### Additional Notes:
+- This strategy works best in trending or range-bound markets. Avoid using it during highly volatile or choppy conditions.
+- Always backtest the strategy on historical data to ensure its effectiveness in your chosen market and timeframe.
+- Combine this strategy with other technical analysis tools (e.g., RSI, volume analysis) for additional confirmation if needed.
+
+The DivergenceAnchor strategy is a powerful tool for traders looking to capitalize on bearish divergence patterns while ensuring strong confirmation through price action and intraday support levels.

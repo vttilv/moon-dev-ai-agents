@@ -1,0 +1,48 @@
+STRATEGY_NAME: DivergentPulse
+
+STRATEGY_DETAILS:
+The DivergentPulse strategy is a trend-reversal trading system that combines MACD and RSI divergence signals for precise entry points, while using ATR-based exits and strict daily trade limits for disciplined risk management.
+
+Key Components:
+1. MACD Divergence: Identifies potential trend reversals when price makes higher highs while MACD makes lower highs (bearish divergence) or price makes lower lows while MACD makes higher lows (bullish divergence).
+2. RSI Divergence: Confirms reversal signals when RSI shows divergence in the same direction as MACD.
+3. ATR-based Exits: Uses 2-3 ATR units from entry price as dynamic profit targets and stop-loss levels.
+4. Daily Trade Limit: Restricts trading to one position per day to prevent overtrading.
+
+Entry Rules:
+1. Wait for both MACD and RSI to show divergence in the same direction (bullish or bearish).
+2. For bullish trades:
+   - Price makes lower low
+   - MACD makes higher low
+   - RSI makes higher low
+3. For bearish trades:
+   - Price makes higher high
+   - MACD makes lower high
+   - RSI makes lower high
+4. Enter on the first candle that closes in the direction of the divergence after confirmation.
+
+Exit Rules:
+1. Set profit target at 2-3 ATR units from entry price in the trade direction.
+2. Set stop-loss at 2-3 ATR units from entry price in the opposite direction.
+3. Exit immediately if either target or stop is hit.
+4. Close any open position at market close if not triggered.
+
+Risk Management:
+1. Position size calculated based on 1% risk per trade using ATR-based stop distance.
+2. Maximum one trade per day, regardless of outcome.
+3. No trading during major news events or low liquidity periods.
+4. Daily loss limit of 3% of account equity.
+
+Required Indicators:
+1. MACD (12,26,9) - for divergence detection
+2. RSI (14) - for confirmation and divergence
+3. ATR (14) - for position sizing and exit levels
+4. Price chart with visible swing highs/lows
+
+Additional Notes:
+- Use 1-hour or 4-hour charts for optimal signal quality.
+- Backtest on at least 6 months of historical data before live trading.
+- Keep a trading journal to track divergence patterns and their success rates.
+- Combine with fundamental analysis for higher probability setups.
+
+This strategy combines the power of momentum divergence with volatility-based exits, creating a systematic approach to catching trend reversals while maintaining strict risk control. The daily trade limit ensures discipline and prevents emotional trading decisions.

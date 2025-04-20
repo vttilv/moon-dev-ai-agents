@@ -1,0 +1,34 @@
+STRATEGY_NAME: LiquidityBreakout
+
+STRATEGY_DETAILS:
+The LiquidityBreakout strategy is designed to capitalize on long liquidation events in the market, which often lead to significant price movements. This strategy focuses on identifying key liquidity zones and executing trades when price breaks out of these zones, typically during periods of high volatility.
+
+### Key Strategy Components:
+1. **Liquidity Zones**: Identify areas on the chart where a large number of stop-loss orders are likely to be clustered. These zones are often near recent highs or lows.
+2. **Volume Analysis**: Use volume indicators to confirm the strength of the breakout. High volume during the breakout increases the likelihood of a sustained move.
+3. **Price Action**: Monitor price action around the liquidity zones. Look for consolidation or a tight range before the breakout.
+
+### Entry Rules:
+1. **Breakout Confirmation**: Enter a trade when the price breaks above a key resistance level (for a long position) or below a key support level (for a short position) with significant volume.
+2. **Retest Entry**: Alternatively, wait for the price to retest the broken level (now acting as support or resistance) and enter on the confirmation of the retest.
+
+### Exit Rules:
+1. **Profit Target**: Set a profit target based on the average range of the asset or a key resistance/support level.
+2. **Stop Loss**: Place a stop loss just below the breakout level for a long position or above the breakout level for a short position.
+3. **Trailing Stop**: Use a trailing stop to lock in profits as the price moves in your favor.
+
+### Risk Management:
+1. **Position Sizing**: Risk a small percentage of your trading capital on each trade, typically 1-2%.
+2. **Risk-Reward Ratio**: Aim for a risk-reward ratio of at least 1:2 to ensure that potential profits outweigh potential losses.
+3. **Diversification**: Avoid over-concentration in a single asset or market to spread risk.
+
+### Required Indicators:
+1. **Volume Indicator**: To confirm the strength of the breakout.
+2. **Support and Resistance Levels**: To identify key liquidity zones.
+3. **Moving Averages**: Optional, to help identify the overall trend and filter trades in the direction of the trend.
+
+### Additional Considerations:
+- **Market Conditions**: This strategy works best in trending markets or during periods of high volatility. Avoid using it in choppy or sideways markets.
+- **Timeframes**: Suitable for various timeframes, but higher timeframes (e.g., 1-hour, 4-hour, daily) tend to provide more reliable signals.
+
+By following the LiquidityBreakout strategy, traders can effectively capitalize on long liquidation events and significant price movements, while managing risk appropriately.

@@ -1,0 +1,35 @@
+STRATEGY_NAME: SpreadWidener
+
+STRATEGY_DETAILS:
+The SpreadWidener strategy is a statistical arbitrage approach designed to capitalize on discrepancies in bid-ask spreads across correlated markets. The strategy focuses on identifying and exploiting temporary widening of spreads, entering long positions when spreads widen significantly and exiting before they tighten back to normal levels.
+
+### Key Strategy Components:
+1. **Correlated Pair Selection**: Identify a pair of highly correlated assets or markets. These could be stocks, ETFs, or futures contracts that historically move in tandem.
+2. **Spread Calculation**: Continuously monitor the bid-ask spread for both assets in the pair. The spread is calculated as the difference between the ask price and the bid price.
+3. **Spread Widening Detection**: Use statistical methods to determine when the spread between the two assets widens beyond a certain threshold, indicating a potential arbitrage opportunity.
+4. **Execution Timing**: Enter a long position in the asset with the wider spread and a corresponding short position in the correlated asset when the spread widens beyond the threshold.
+5. **Exit Strategy**: Monitor the spread and exit the positions when the spread tightens back to a predefined level, locking in the arbitrage profit.
+
+### Entry Rules:
+- **Spread Threshold**: Define a threshold for the spread widening, typically based on historical data and standard deviation. For example, if the average spread is 0.10 and the standard deviation is 0.02, a threshold might be set at 0.15 (average + 2.5 standard deviations).
+- **Correlation Check**: Ensure that the correlation between the two assets remains high (e.g., above 0.8) to minimize the risk of the spread widening due to fundamental changes in the assets.
+- **Volume Check**: Ensure that there is sufficient trading volume in both assets to allow for smooth entry and exit.
+
+### Exit Rules:
+- **Spread Tightening**: Exit the positions when the spread tightens back to a predefined level, such as the average spread or a level slightly above it (e.g., 0.11).
+- **Time-Based Exit**: If the spread does not tighten within a certain time frame (e.g., 30 minutes), exit the positions to avoid prolonged exposure.
+- **Stop-Loss**: Set a stop-loss level to limit potential losses if the spread continues to widen beyond a certain point (e.g., 0.20).
+
+### Risk Management:
+- **Position Sizing**: Use a fixed percentage of the portfolio for each trade to manage risk. For example, allocate no more than 2% of the portfolio to a single trade.
+- **Diversification**: Trade multiple correlated pairs to diversify risk and reduce the impact of any single trade.
+- **Leverage**: Avoid excessive leverage to prevent large losses in case of adverse movements.
+
+### Required Indicators:
+1. **Bid-Ask Spread**: Real-time bid and ask prices for both assets in the pair.
+2. **Correlation Coefficient**: A measure of the correlation between the two assets, updated in real-time.
+3. **Standard Deviation**: Historical standard deviation of the spread to determine the widening threshold.
+4. **Volume Indicator**: Trading volume for both assets to ensure liquidity.
+
+### Summary:
+The SpreadWidener strategy is a sophisticated statistical arbitrage approach that requires precise monitoring of bid-ask spreads and correlation between assets. By entering positions when spreads widen and exiting before they tighten, the strategy aims to capture small, consistent profits while managing risk through careful position sizing and diversification.

@@ -1,0 +1,53 @@
+STRATEGY_NAME: DivergentVolume
+
+STRATEGY_DETAILS:
+The DivergentVolume strategy is a unique approach that combines RSI divergence analysis with volume confirmation and ATR-based exits. It focuses on identifying bearish RSI divergences during uptrends while incorporating volume dynamics and volatility-based exit signals.
+
+Key Strategy Components:
+1. RSI Divergence Detection (14-period RSI)
+2. Price Action Confirmation (Higher Highs)
+3. Volume Analysis (Decreasing volume)
+4. ATR-based Exit Levels (14-period ATR)
+
+Entry Rules:
+1. Identify a bearish RSI divergence:
+   - Price makes a higher high
+   - RSI makes a lower high
+2. Confirm decreasing volume:
+   - Current volume is lower than previous volume peak
+3. Enter long position when:
+   - Both divergence and volume conditions are met
+   - Price closes above the previous high
+
+Exit Rules:
+1. Primary Exit:
+   - When RSI converges (current RSI > previous RSI high)
+2. Secondary Exit:
+   - When price reaches 1.5x ATR above entry
+3. Stop Loss:
+   - Set at 1x ATR below entry
+
+Risk Management:
+1. Position sizing based on 1% risk per trade
+2. Maximum portfolio exposure: 5%
+3. Daily trade limit: 3 trades
+4. Stop loss mandatory on all positions
+
+Required Indicators:
+1. RSI (14-period)
+2. ATR (14-period)
+3. Volume indicator
+
+Additional Notes:
+- Only trade during high liquidity hours
+- Avoid trading during major news events
+- Confirm divergence on 1-hour chart before executing on lower timeframes
+- Use volume moving average (20-period) to confirm decreasing volume trend
+
+Optimization Tips:
+- Adjust ATR multiplier based on market volatility
+- Consider adding MACD confirmation for stronger signals
+- Test different RSI periods for specific instruments
+- Implement time-based exits for longer-term trades
+
+This strategy combines technical analysis with volume dynamics, offering a systematic approach to trading bearish divergences in uptrends while managing risk through volatility-based exits.

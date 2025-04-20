@@ -1,5 +1,5 @@
 """
-🌙 Moon Dev's RBI Agent (Research-Backtest-Implement)
+🌙 Moon Dev's RBI AI (Research-Backtest-Implement)
 Built with love by Moon Dev 🚀
 
 Required Setup:
@@ -23,7 +23,7 @@ Required Setup:
    - Can be YouTube URLs, PDF links, or text descriptions
    - Lines starting with # are ignored
 
-This agent automates the RBI process:
+This AI automates the RBI process:
 1. Research: Analyzes trading strategies from various sources
 2. Backtest: Creates backtests for promising strategies
 3. Debug: Fixes technical issues in generated backtests
@@ -34,12 +34,6 @@ This helps keep your strategy research organized by day!
 Remember: Past performance doesn't guarantee future results!
 """
 
-# Model Configuration
-# Using a mix of Ollama models and DeepSeek API
-# RESEARCH_CONFIG = {
-#     "type": "ollama",
-#     "name": "llama3.2"  # Using Llama 3.2 for research
-# }
 
 RESEARCH_CONFIG = {
     "type": "deepseek",
@@ -66,13 +60,51 @@ PACKAGE_CONFIG = {
     "name": "deepseek-chat"  # Using Llama 3.2 for package optimization
 }
 
+# Model Configuration
+# Using a mix of Ollama models and DeepSeek API
+# RESEARCH_CONFIG = {
+#     "type": "ollama",
+#     "name": "llama3.2"  # Using Llama 3.2 for research
+# }
+
+# RESEARCH_CONFIG = {
+#     "type": "deepseek",
+#     "name": "deepseek-chat"  # Using Llama 3.2 for research
+# }
+
+# BACKTEST_CONFIG = {
+#     "type": "openai", 
+#     "name": "o3"  # Using O3-mini for backtesting
+# }
+
+# DEBUG_CONFIG = {
+#     "type": "openai",
+#     "name": "o3"  # Using GPT-4.1 for debugging
+# }
+
+# # DEBUG_CONFIG = {
+# #     "type": "ollama",
+# #     "name": "deepseek-r1"  # Using Ollama's DeepSeek-R1 for debugging
+# # }
+
+# # PACKAGE_CONFIG = {
+# #     "type": "deepseek",
+# #     "name": "deepseek-chat"  # Using Llama 3.2 for package optimization
+# # }
+
+# PACKAGE_CONFIG = {
+#     "type": "openai",
+#     "name": "o3"  # Using Llama 3.2 for package optimization
+# }
+
+
 # PACKAGE_CONFIG = {
 #     "type": "ollama",
 #     "name": "llama3.2"  # Using Llama 3.2 for package optimization
 # }
 
 
-# DeepSeek Model Selection per Agent
+# DeepSeek Model Selection per AI
 # "gemma:2b",     # Google's Gemma 2B model
 #         "llama3.2",
 # Using a mix of models for different tasks
@@ -81,7 +113,7 @@ BACKTEST_MODEL = "deepseek-reasoner"  # DeepSeek API for backtesting
 DEBUG_MODEL = "deepseek-r1"           # Ollama DeepSeek-R1 for debugging
 PACKAGE_MODEL = "llama3.2"            # Llama 3.2 for package optimization
 
-# Agent Prompts
+# AI Prompts
 
 RESEARCH_PROMPT = """
 You are Moon Dev's Research AI 🌙
@@ -124,15 +156,16 @@ Remember: The name must be UNIQUE and SPECIFIC to this strategy's approach!
 """
 
 BACKTEST_PROMPT = """
-You are Moon Dev's Backtest AI 🌙
+You are Moon Dev's Backtest AI 🌙 ONLY SEND BACK CODE, NO OTHER TEXT.
 Create a backtesting.py implementation for the strategy.
+USE BACKTESTING.PY
 Include:
 1. All necessary imports
 2. Strategy class with indicators
 3. Entry/exit logic
 4. Risk management
 5. your size should be 1,000,000
-6. If you need indicators use TA lib or pandas TA. Do not use backtesting.py's indicators. 
+6. If you need indicators use TA lib or pandas TA.
 
 IMPORTANT DATA HANDLING:
 1. Clean column names by removing spaces: data.columns = data.columns.str.strip().str.lower()
@@ -141,6 +174,7 @@ IMPORTANT DATA HANDLING:
    - Required columns: 'Open', 'High', 'Low', 'Close', 'Volume'
    - Use proper case (capital first letter)
 
+FOR THE PYTHON BACKTESTING LIBRARY USE BACKTESTING.PY AND SEND BACK ONLY THE CODE, NO OTHER TEXT.
 
 INDICATOR CALCULATION RULES:
 1. ALWAYS use self.I() wrapper for ANY indicator calculations
@@ -175,7 +209,7 @@ RISK MANAGEMENT:
 2. Use proper stop loss and take profit calculations
 4. Print entry/exit signals with Moon Dev themed messages
 
-If you need indicators use TA lib or pandas TA. Do not use backtesting.py's indicators. 
+If you need indicators use TA lib or pandas TA. 
 
 Use this data path: /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv
 the above data head looks like below
@@ -184,6 +218,9 @@ datetime, open, high, low, close, volume,
 2023-01-01 00:15:00, 16509.78, 16534.66, 16509.11, 16533.43, 308.12276951,
 
 Always add plenty of Moon Dev themed debug prints with emojis to make debugging easier! 🌙 ✨ 🚀
+
+FOR THE PYTHON BACKTESTING LIBRARY USE BACKTESTING.PY AND SEND BACK ONLY THE CODE, NO OTHER TEXT.
+ONLY SEND BACK CODE, NO OTHER TEXT.
 """
 
 DEBUG_PROMPT = """
@@ -216,6 +253,7 @@ DO NOT change:
 4. Parameter values (unless fixing technical issues)
 
 Return the complete fixed code with Moon Dev themed debug prints! 🌙 ✨
+ONLY SEND BACK CODE, NO OTHER TEXT.
 """
 
 PACKAGE_PROMPT = """
@@ -254,6 +292,7 @@ Example conversions:
 
 IMPORTANT: Scan the ENTIRE code for any backtesting.lib usage and replace ALL instances!
 Return the complete fixed code with proper Moon Dev themed debug prints! 🌙 ✨
+ONLY SEND BACK CODE, NO OTHER TEXT.
 """
 
 def get_model_id(model):
@@ -300,13 +339,13 @@ PROCESSED_IDEAS_LOG = DATA_DIR / "processed_ideas.log"  # New file to track proc
 for dir in [DATA_DIR, TODAY_DIR, RESEARCH_DIR, BACKTEST_DIR, PACKAGE_DIR, FINAL_BACKTEST_DIR, CHARTS_DIR]:
     dir.mkdir(parents=True, exist_ok=True)
 
-print(f"📂 Using RBI data directory: {DATA_DIR}")
-print(f"📅 Today's date folder: {TODAY_DATE}")
-print(f"📂 Research directory: {RESEARCH_DIR}")
-print(f"📂 Backtest directory: {BACKTEST_DIR}")
-print(f"📂 Package directory: {PACKAGE_DIR}")
-print(f"📂 Final backtest directory: {FINAL_BACKTEST_DIR}")
-print(f"📈 Charts directory: {CHARTS_DIR}")
+cprint(f"📂 Using RBI data directory: {DATA_DIR}")
+cprint(f"📅 Today's date folder: {TODAY_DATE}")
+cprint(f"📂 Research directory: {RESEARCH_DIR}")
+cprint(f"📂 Backtest directory: {BACKTEST_DIR}")
+cprint(f"📂 Package directory: {PACKAGE_DIR}")
+cprint(f"📂 Final backtest directory: {FINAL_BACKTEST_DIR}")
+cprint(f"📈 Charts directory: {CHARTS_DIR}")
 
 def init_deepseek_client():
     """Initialize DeepSeek client with proper error handling"""
@@ -317,7 +356,7 @@ def init_deepseek_client():
             return None
             
         print("🔑 Initializing DeepSeek client...")
-        print("🌟 Moon Dev's RBI Agent is connecting to DeepSeek...")
+        print("🌟 Moon Dev's RBI AI is connecting to DeepSeek...")
         
         client = openai.OpenAI(
             api_key=deepseek_key,
@@ -325,7 +364,7 @@ def init_deepseek_client():
         )
         
         print("✅ DeepSeek client initialized successfully!")
-        print("🚀 Moon Dev's RBI Agent ready to roll!")
+        print("🚀 Moon Dev's RBI AI ready to roll!")
         return client
     except Exception as e:
         print(f"❌ Error initializing DeepSeek client: {str(e)}")
@@ -353,7 +392,7 @@ def chat_with_model(system_prompt, user_content, model_config):
             raise ValueError(f"🚨 Could not initialize {model_config['type']} {model_config['name']} model!")
 
         cprint(f"🤖 Using {model_config['type']} model: {model_config['name']}", "cyan")
-        cprint("🌟 Moon Dev's RBI Agent is thinking...", "yellow")
+        cprint("🌟 Moon Dev's RBI AI is thinking...", "yellow")
         
         # Debug prints for prompt lengths
         cprint(f"📝 System prompt length: {len(system_prompt)} chars", "cyan")
@@ -447,7 +486,7 @@ def get_pdf_text(url):
         return None
 
 def animate_progress(agent_name, stop_event):
-    """Fun animation while agent is thinking"""
+    """Fun animation while AI is thinking"""
     spinners = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘']
     messages = [
         "brewing coffee ☕️",
@@ -538,13 +577,13 @@ def clean_model_output(output, content_type="text"):
     return cleaned_output
 
 def research_strategy(content):
-    """Research Agent: Analyzes and creates trading strategy"""
-    cprint("\n🔍 Starting Research Agent...", "cyan")
+    """Research AI: Analyzes and creates trading strategy"""
+    cprint("\n🔍 Starting Research AI...", "cyan")
     cprint("🤖 Time to discover some alpha!", "yellow")
     
     output = run_with_animation(
         chat_with_model,
-        "Research Agent",
+        "Research AI",
         RESEARCH_PROMPT, 
         content,
         RESEARCH_CONFIG  # Pass research-specific model config
@@ -588,19 +627,19 @@ def research_strategy(content):
         filepath = RESEARCH_DIR / f"{strategy_name}_strategy.txt"
         with open(filepath, 'w') as f:
             f.write(output)
-        cprint(f"📝 Research Agent found something spicy! Saved to {filepath} 🌶️", "green")
+        cprint(f"📝 Research AI found something spicy! Saved to {filepath} 🌶️", "green")
         cprint(f"🏷️ Generated strategy name: {strategy_name}", "yellow")
         return output, strategy_name
     return None, None
 
 def create_backtest(strategy, strategy_name="UnknownStrategy"):
-    """Backtest Agent: Creates backtest implementation"""
-    cprint("\n📊 Starting Backtest Agent...", "cyan")
+    """Backtest AI: Creates backtest implementation"""
+    cprint("\n📊 Starting Backtest AI...", "cyan")
     cprint("💰 Let's turn that strategy into profits!", "yellow")
     
     output = run_with_animation(
         chat_with_model,
-        "Backtest Agent",
+        "Backtest AI",
         BACKTEST_PROMPT,
         f"Create a backtest for this strategy:\n\n{strategy}",
         BACKTEST_CONFIG  # Pass backtest-specific model config
@@ -613,13 +652,13 @@ def create_backtest(strategy, strategy_name="UnknownStrategy"):
         filepath = BACKTEST_DIR / f"{strategy_name}_BT.py"
         with open(filepath, 'w') as f:
             f.write(output)
-        cprint(f"🔥 Backtest Agent cooked up some heat! Saved to {filepath} 🚀", "green")
+        cprint(f"🔥 Backtest AI cooked up some heat! Saved to {filepath} 🚀", "green")
         return output
     return None
 
 def debug_backtest(backtest_code, strategy=None, strategy_name="UnknownStrategy"):
-    """Debug Agent: Fixes technical issues in backtest code"""
-    cprint("\n🔧 Starting Debug Agent...", "cyan")
+    """Debug AI: Fixes technical issues in backtest code"""
+    cprint("\n🔧 Starting Debug AI...", "cyan")
     cprint("🔍 Time to squash some bugs!", "yellow")
     
     context = f"Here's the backtest code to debug:\n\n{backtest_code}"
@@ -628,7 +667,7 @@ def debug_backtest(backtest_code, strategy=None, strategy_name="UnknownStrategy"
     
     output = run_with_animation(
         chat_with_model,
-        "Debug Agent",
+        "Debug AI",
         DEBUG_PROMPT,
         context,
         DEBUG_CONFIG  # Pass debug-specific model config
@@ -641,18 +680,18 @@ def debug_backtest(backtest_code, strategy=None, strategy_name="UnknownStrategy"
         filepath = FINAL_BACKTEST_DIR / f"{strategy_name}_BTFinal.py"
         with open(filepath, 'w') as f:
             f.write(output)
-        cprint(f"🔧 Debug Agent fixed the code! Saved to {filepath} ✨", "green")
+        cprint(f"🔧 Debug AI fixed the code! Saved to {filepath} ✨", "green")
         return output
     return None
 
 def package_check(backtest_code, strategy_name="UnknownStrategy"):
-    """Package Agent: Ensures correct indicator packages are used"""
-    cprint("\n📦 Starting Package Agent...", "cyan")
+    """Package AI: Ensures correct indicator packages are used"""
+    cprint("\n📦 Starting Package AI...", "cyan")
     cprint("🔍 Checking for proper indicator imports!", "yellow")
     
     output = run_with_animation(
         chat_with_model,
-        "Package Agent",
+        "Package AI",
         PACKAGE_PROMPT,
         f"Check and fix indicator packages in this code:\n\n{backtest_code}",
         PACKAGE_CONFIG  # Pass package-specific model config
@@ -665,7 +704,7 @@ def package_check(backtest_code, strategy_name="UnknownStrategy"):
         filepath = PACKAGE_DIR / f"{strategy_name}_PKG.py"
         with open(filepath, 'w') as f:
             f.write(output)
-        cprint(f"📦 Package Agent optimized the imports! Saved to {filepath} ✨", "green")
+        cprint(f"📦 Package AI optimized the imports! Saved to {filepath} ✨", "green")
         return output
     return None
 
@@ -732,7 +771,7 @@ def log_processed_idea(idea: str, strategy_name: str = "Unknown") -> None:
     if not PROCESSED_IDEAS_LOG.exists():
         PROCESSED_IDEAS_LOG.parent.mkdir(parents=True, exist_ok=True)
         with open(PROCESSED_IDEAS_LOG, 'w') as f:
-            f.write("# Moon Dev's RBI Agent - Processed Ideas Log 🌙\n")
+            f.write("# Moon Dev's RBI AI - Processed Ideas Log 🌙\n")
             f.write("# Format: hash,timestamp,strategy_name,idea_snippet\n")
     
     # Append the processed idea to the log
@@ -745,7 +784,7 @@ def log_processed_idea(idea: str, strategy_name: str = "Unknown") -> None:
 
 def process_trading_idea(idea: str) -> None:
     """Process a single trading idea completely independently"""
-    print("\n🚀 Moon Dev's RBI Agent Processing New Idea!")
+    print("\n🚀 Moon Dev's RBI AI Processing New Idea!")
     print("🌟 Let's find some alpha in the chaos!")
     print(f"📝 Processing idea: {idea[:100]}...")
     print(f"📅 Saving results to today's folder: {TODAY_DATE}")
@@ -885,7 +924,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        cprint(f"\n🌟 Moon Dev's RBI Agent Starting Up!", "green")
+        cprint(f"\n🌟 Moon Dev's RBI AI Starting Up!", "green")
         cprint(f"📅 Today's Date: {TODAY_DATE} - All outputs will be saved in this folder", "magenta")
         cprint(f"🧠 DeepSeek-R1 thinking tags will be automatically removed from outputs", "magenta")
         cprint(f"📋 Processed ideas log: {PROCESSED_IDEAS_LOG}", "magenta")
@@ -896,6 +935,6 @@ if __name__ == "__main__":
         cprint(f"📦 Package: {PACKAGE_CONFIG['type']} - {PACKAGE_CONFIG['name']}", "cyan")
         main()
     except KeyboardInterrupt:
-        cprint("\n👋 Moon Dev's RBI Agent shutting down gracefully...", "yellow")
+        cprint("\n👋 Moon Dev's RBI AI shutting down gracefully...", "yellow")
     except Exception as e:
         cprint(f"\n❌ Fatal error: {str(e)}", "red")

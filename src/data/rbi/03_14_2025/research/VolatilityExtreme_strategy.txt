@@ -1,0 +1,48 @@
+STRATEGY_NAME: VolatilityExtreme
+
+STRATEGY_DETAILS:
+The VolatilityExtreme strategy is a mean-reversion approach focused on exploiting extreme deviations in VIX futures from their historical mean. It capitalizes on the tendency of volatility to revert to its mean after reaching extreme levels, using standard deviation thresholds as key triggers for trade entries and exits.
+
+### Key Strategy Components:
+1. **VIX Futures Analysis**: The strategy relies on VIX futures as the primary instrument, tracking their deviation from the historical mean.
+2. **Standard Deviation Bands**: Uses statistical standard deviation bands (2-3 and 3-4 std devs) to identify extreme overbought and oversold conditions.
+3. **Mean Reversion Logic**: Assumes that extreme deviations in VIX futures will revert to the mean, providing profitable trading opportunities.
+
+### Entry Rules:
+1. **Long Entry**: 
+   - Trigger: VIX futures are 3-4 standard deviations below the historical mean.
+   - Action: Open a long position in VIX futures or related volatility instruments (e.g., VXX, UVXY).
+   - Rationale: Extreme lows in VIX futures suggest complacency in the market, which often precedes a spike in volatility.
+
+2. **Short Entry**: 
+   - Trigger: VIX futures are 2-3 standard deviations above the historical mean.
+   - Action: Open a short position in VIX futures or related instruments.
+   - Rationale: Extreme highs in VIX futures indicate excessive fear, which often precedes a decline in volatility.
+
+### Exit Rules:
+1. **Long Exit**: 
+   - Trigger: VIX futures revert to within 1 standard deviation of the historical mean.
+   - Action: Close the long position.
+   - Rationale: The mean-reversion process is complete, and further upside potential is limited.
+
+2. **Short Exit**: 
+   - Trigger: VIX futures revert to within 1 standard deviation of the historical mean.
+   - Action: Close the short position.
+   - Rationale: The mean-reversion process is complete, and further downside potential is limited.
+
+### Risk Management:
+1. **Position Sizing**: Use a fixed percentage of capital (e.g., 1-2%) per trade to limit exposure.
+2. **Stop-Loss**: Set a stop-loss at 1.5 times the standard deviation level used for entry to account for potential overshoots.
+3. **Time-Based Exit**: If the trade does not revert to the mean within a predefined period (e.g., 5-10 days), exit the position to avoid prolonged exposure.
+
+### Required Indicators:
+1. **VIX Futures Data**: Historical and real-time data for VIX futures.
+2. **Standard Deviation Calculation**: A rolling standard deviation of VIX futures prices over a specified lookback period (e.g., 20-50 days).
+3. **Historical Mean**: A rolling mean of VIX futures prices over the same lookback period.
+
+### Additional Notes:
+- **Lookback Period**: Adjust the lookback period for the mean and standard deviation calculations based on market conditions. Shorter periods (e.g., 20 days) may be more responsive, while longer periods (e.g., 50 days) provide more stable signals.
+- **Correlation with SPX**: Monitor the correlation between VIX futures and the S&P 500 (SPX) to confirm the validity of the signals. Extreme VIX levels often coincide with significant SPX movements.
+- **Backtesting**: Conduct thorough backtesting to validate the strategy's performance across different market regimes.
+
+The VolatilityExtreme strategy is designed for traders who understand the nuances of volatility trading and are comfortable with the risks associated with mean-reversion strategies. It requires disciplined execution and careful monitoring of market conditions.

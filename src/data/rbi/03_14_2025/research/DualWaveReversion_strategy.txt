@@ -1,0 +1,32 @@
+STRATEGY_NAME: DualWaveReversion
+
+STRATEGY_DETAILS:
+The DualWaveReversion strategy is designed to capitalize on short-term mean-reversion opportunities by leveraging the difference between a 50-day simple moving average (SMA) and a 20-day exponential moving average (EMA). The strategy uses 2x leverage to amplify returns while maintaining strict risk management through the use of Average True Range (ATR) for stop loss and profit target levels.
+
+Key Strategy Components:
+1. **50-day SMA**: Represents the longer-term trend and acts as a baseline for identifying mean-reversion opportunities.
+2. **20-day EMA**: Represents the shorter-term trend and helps identify overextended price movements.
+3. **ATR (Average True Range)**: Used to set dynamic stop loss and profit target levels based on market volatility.
+4. **2x Leverage**: Amplifies potential returns while increasing risk, requiring careful risk management.
+
+Entry Rules:
+1. **Buy Signal**: Enter a 2x leveraged long position when the 20-day EMA crosses below the 50-day SMA, indicating a potential short-term oversold condition.
+2. **Confirmation**: Ensure the price is trading near the 50-day SMA to confirm the mean-reversion setup.
+
+Exit Rules:
+1. **Stop Loss**: Set a stop loss at 1% of the ATR below the entry price to limit downside risk.
+2. **Profit Target**: Set a profit target at 3% of the ATR above the entry price to lock in gains.
+3. **Time-Based Exit**: If the profit target or stop loss is not hit within 5 trading days, exit the position to avoid prolonged exposure.
+
+Risk Management:
+1. **Position Sizing**: Use a fixed percentage of the trading capital (e.g., 2-5%) per trade to ensure consistent risk exposure.
+2. **Leverage Control**: Monitor leverage closely and avoid overexposure by adhering to the 2x leverage limit.
+3. **Volatility Adjustment**: Adjust position sizes based on ATR levels to account for changing market conditions.
+
+Required Indicators:
+1. **50-day Simple Moving Average (SMA)**
+2. **20-day Exponential Moving Average (EMA)**
+3. **Average True Range (ATR)**
+4. **Price Chart**: To visualize the crossover and confirm entry/exit points.
+
+This strategy is best suited for traders who are comfortable with leverage and have a solid understanding of mean-reversion principles. It works well in ranging or mildly trending markets but may underperform in strongly trending conditions. Regular backtesting and adjustments based on market conditions are recommended to optimize performance.

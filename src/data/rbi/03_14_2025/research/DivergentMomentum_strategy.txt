@@ -1,38 +1,47 @@
 STRATEGY_NAME: DivergentMomentum
 
 STRATEGY_DETAILS:
-The DivergentMomentum strategy is a unique approach that combines overbought RSI conditions with strong trend confirmation from ADX to identify potential long trades. The strategy focuses on entering trades when momentum is strong but potentially overextended, while using divergence and ADX weakening as exit signals.
 
-Key Components:
-1. RSI (Relative Strength Index) - Used to identify overbought conditions (typically above 70)
-2. ADX (Average Directional Index) - Used to confirm trend strength (typically above 25)
-3. Price Action - Used to identify potential divergences
+This strategy combines momentum filtering, divergence detection, and directional bias analysis to identify high-probability long entries and exits. The core idea is to capitalize on oversold conditions with bullish divergence while using the Commodity Channel Index (CCI) to manage exits.
 
-Entry Rules:
-1. Wait for RSI to cross above 70 (overbought condition)
-2. Confirm ADX is above 25 and rising (strong trend confirmation)
-3. Enter long position on next candle open after both conditions are met
+### Key Components:
+1. **Momentum Filter**: Uses RSI (Relative Strength Index) to identify oversold conditions (RSI < 30).
+2. **Divergence Detection**: Looks for bullish divergence between the RSI and the 50-period Moving Average (MA).
+3. **Exit Mechanism**: Relies on the CCI's directional bias to determine when to exit the trade.
 
-Exit Rules:
-1. Primary Exit: Look for bearish divergence between price and RSI (price makes higher high while RSI makes lower high)
-2. Secondary Exit: ADX begins to decline significantly (suggesting weakening trend)
-3. Emergency Exit: If price drops below recent swing low
+---
 
-Risk Management:
-1. Set stop-loss below recent swing low or based on ATR (Average True Range)
-2. Use position sizing based on account risk tolerance (1-2% per trade)
-3. Consider trailing stop based on ATR or moving average
+### Entry Rules:
+1. **Condition 1**: The short-term RSI (default 14-period) must be below 30, indicating an oversold condition.
+2. **Condition 2**: The RSI must show bullish divergence relative to the 50-period MA. This means the RSI is making higher lows while the price is making lower lows.
+3. **Confirmation**: Wait for the price to close above the 50-period MA to confirm the bullish reversal.
 
-Required Indicators:
-1. RSI (14 period recommended)
-2. ADX (14 period recommended)
-3. Optional: ATR for stop-loss placement
+---
 
-Additional Notes:
-- This strategy works best in trending markets
-- Consider using on higher timeframes (1H or above) for better reliability
-- Combine with fundamental analysis for additional confirmation
-- Backtest thoroughly before live trading
-- Monitor for false signals during choppy market conditions
+### Exit Rules:
+1. **CCI Directional Bias**: Monitor the CCI (default 20-period) for a change in direction. Exit the trade when the CCI starts to turn downward after reaching overbought levels (CCI > 100).
+2. **Stop Loss**: Place a stop loss below the most recent swing low or a fixed percentage (e.g., 1-2%) below the entry price.
+3. **Take Profit**: Use a trailing stop or exit when the CCI crosses below a predefined threshold (e.g., 0 or -50).
 
-The DivergentMomentum strategy is particularly effective in strong trending markets where overbought conditions can persist longer than expected, allowing traders to ride the momentum while maintaining clear exit signals through divergence and trend strength analysis.
+---
+
+### Risk Management:
+1. **Position Sizing**: Risk no more than 1-2% of the trading capital per trade.
+2. **Stop Loss**: Always use a stop loss to limit downside risk.
+3. **Trailing Stop**: Consider using a trailing stop to lock in profits as the trade moves in your favor.
+
+---
+
+### Required Indicators:
+1. **RSI (Relative Strength Index)**: 14-period (default) to identify oversold conditions and divergence.
+2. **50-period Moving Average (MA)**: Used to confirm the bullish reversal and divergence.
+3. **CCI (Commodity Channel Index)**: 20-period (default) to determine exit points based on directional bias.
+
+---
+
+### Example Setup:
+1. **Entry**: RSI drops below 30, forms a higher low while price forms a lower low, and the price closes above the 50-period MA.
+2. **Exit**: CCI reaches overbought levels (>100) and starts to turn downward.
+3. **Stop Loss**: Set below the recent swing low or 1-2% below the entry price.
+
+This strategy is designed for trending markets and works best when combined with proper risk management and confirmation from price action.

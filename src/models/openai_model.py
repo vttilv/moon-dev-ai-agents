@@ -11,6 +11,12 @@ class OpenAIModel(BaseModel):
     """Implementation for OpenAI's models"""
     
     AVAILABLE_MODELS = {
+        "o3": {
+            "description": "Advanced reasoning model with superior problem-solving capabilities",
+            "input_price": "$1.50/1m tokens",
+            "output_price": "$5.00/1m tokens",
+            "supports_reasoning_effort": True
+        },
         "o3-mini": {
             "description": "Fast reasoning model with problem-solving capabilities",
             "input_price": "$1.10/1m tokens",
@@ -40,6 +46,18 @@ class OpenAIModel(BaseModel):
             "input_price": "$0.005/1K tokens",
             "output_price": "$0.015/1K tokens",
             "supports_reasoning_effort": False
+        },
+        "gpt-4.1": {
+            "description": "Latest GPT-4.1 model with enhanced capabilities",
+            "input_price": "$0.01/1K tokens",
+            "output_price": "$0.03/1K tokens",
+            "supports_reasoning_effort": True
+        },
+        "o4-mini": {
+            "description": "Efficient O4 model with balanced performance",
+            "input_price": "$1.30/1m tokens",
+            "output_price": "$4.70/1m tokens",
+            "supports_reasoning_effort": True
         }
     }
     

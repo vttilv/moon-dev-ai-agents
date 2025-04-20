@@ -1,0 +1,44 @@
+STRATEGY_NAME: FractalVolumeBreakout
+
+STRATEGY_DETAILS:
+
+This strategy combines fractal pattern analysis with volume-driven breakout signals to identify high-probability trading opportunities. The key components of this strategy are:
+
+1. **Fractal Pattern Identification**:
+   - Use fractal indicators to identify key support and resistance levels.
+   - Look for fractal patterns that indicate potential breakout zones, such as higher highs or lower lows.
+
+2. **Volume Analysis**:
+   - Monitor volume spikes to confirm breakout signals.
+   - Use volume moving averages (e.g., 20-period VMA) to distinguish between normal and significant volume increases.
+
+3. **Breakout Confirmation**:
+   - Wait for price to break above resistance or below support with a significant increase in volume.
+   - Use a minimum volume threshold (e.g., 1.5x the average volume) to filter out false breakouts.
+
+4. **Entry Rules**:
+   - Enter a long position when price breaks above a fractal resistance level with a volume spike.
+   - Enter a short position when price breaks below a fractal support level with a volume spike.
+   - Use a stop-limit order to enter the trade at the breakout level.
+
+5. **Exit Rules**:
+   - Set a take-profit target based on the next fractal resistance (for longs) or support (for shorts).
+   - Use a trailing stop-loss to lock in profits as the trade moves in your favor.
+   - Exit the trade if volume decreases significantly, indicating a loss of momentum.
+
+6. **Risk Management**:
+   - Risk no more than 1-2% of your trading capital on any single trade.
+   - Place a stop-loss just below the breakout level for long trades or above the breakout level for short trades.
+   - Adjust position size based on the distance between the entry point and stop-loss level.
+
+7. **Required Indicators**:
+   - Fractal Indicator (e.g., Bill Williams Fractals)
+   - Volume Moving Average (VMA)
+   - Volume Spike Detection (custom or built-in volume threshold indicator)
+
+8. **Additional Considerations**:
+   - Avoid trading during low-volume periods or major news events.
+   - Combine this strategy with a broader market trend analysis to increase the probability of success.
+   - Backtest the strategy on historical data to fine-tune parameters like volume thresholds and fractal levels.
+
+This strategy is designed to capitalize on high-volume breakouts confirmed by fractal patterns, providing a systematic approach to trading with clear entry and exit rules.

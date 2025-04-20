@@ -1,0 +1,38 @@
+STRATEGY_NAME: EuroSpreadScalper
+
+STRATEGY_DETAILS:
+The EuroSpreadScalper is a high-frequency options trading strategy designed to capitalize on short-term price movements during the European trading session. This strategy focuses on selling put spreads at the open of European trading hours, aiming for quick profits or losses within a 30-minute window. The strategy is particularly suited for traders who prefer a disciplined, time-bound approach with clear risk management rules.
+
+### Key Strategy Components:
+1. **Timing**: Execute trades at the open of European trading hours (typically 8:00 AM GMT).
+2. **Instrument**: Sell put spreads (a bearish options strategy involving selling a higher strike put and buying a lower strike put).
+3. **Profit Target**: Aim for a 50% profit on the premium received from selling the spread.
+4. **Time Frame**: Close the position within 30 minutes, regardless of profit or loss.
+5. **Risk Management**: Use a stop-loss set at the strike price of the covered call option plus 1 pip.
+
+### Entry Rules:
+1. **Market Condition**: Ensure the market is liquid and volatile enough to provide sufficient movement within the 30-minute window.
+2. **Spread Selection**: Choose put spreads with strikes that are out-of-the-money (OTM) but not too far from the current price to ensure premium capture.
+3. **Execution**: Sell the put spread at the open of European trading hours.
+
+### Exit Rules:
+1. **Profit Target**: Close the position when 50% of the premium received is achieved.
+2. **Time Limit**: Close the position after 30 minutes if the profit target is not met.
+3. **Stop-Loss**: Exit the trade if the price moves against the position, reaching the stop-loss level (strike price of the covered call option plus 1 pip).
+
+### Risk Management:
+1. **Position Sizing**: Limit the size of each trade to a small percentage of the total trading capital to manage risk.
+2. **Stop-Loss**: Strictly adhere to the stop-loss rule to prevent large losses.
+3. **Diversification**: Avoid concentrating all trades in a single underlying asset to spread risk.
+
+### Required Indicators:
+1. **Volatility Index (VIX)**: Monitor implied volatility to ensure favorable conditions for selling options.
+2. **Price Action**: Use real-time price action to gauge market direction and momentum.
+3. **Economic Calendar**: Be aware of major economic announcements during the European session that could impact market volatility.
+
+### Additional Considerations:
+- **Liquidity**: Ensure the underlying asset has sufficient liquidity to facilitate quick entry and exit.
+- **Broker Requirements**: Verify that your broker allows for quick execution and tight spreads, essential for this high-frequency strategy.
+- **Backtesting**: Conduct thorough backtesting to validate the strategy's effectiveness under various market conditions.
+
+By adhering to these rules and maintaining discipline, the EuroSpreadScalper can be a powerful tool for traders looking to exploit short-term opportunities in the European trading session.

@@ -1,0 +1,68 @@
+STRATEGY_NAME: DivergentCrossover
+
+STRATEGY_DETAILS:
+The DivergentCrossover strategy combines RSI divergence, MACD crossover signals, and the Commodity Channel Index (CCI) to identify high-probability trading opportunities. This strategy focuses on capturing momentum shifts while managing risk through trend strength confirmation.
+
+### Key Strategy Components:
+1. **RSI Divergence**: Identifies potential reversals by comparing price action with RSI momentum.
+2. **MACD Crossover**: Confirms momentum shifts using the MACD line and signal line crossovers.
+3. **MACD Histogram**: Provides additional insight into momentum strength and direction.
+4. **CCI Trend Strength**: Acts as an exit filter to avoid trading against strong trends.
+
+### Required Indicators:
+1. **Relative Strength Index (RSI)**: Set to 14 periods.
+2. **Moving Average Convergence Divergence (MACD)**: Default settings (12, 26, 9).
+3. **Commodity Channel Index (CCI)**: Set to 20 periods.
+
+---
+
+### Entry Rules:
+1. **Bullish Entry**:
+   - RSI shows bullish divergence (price makes lower lows, RSI makes higher lows).
+   - MACD line crosses above the signal line (bullish crossover).
+   - MACD Histogram is positive and increasing.
+   - CCI is below +100 (indicating no extreme overbought condition).
+
+2. **Bearish Entry**:
+   - RSI shows bearish divergence (price makes higher highs, RSI makes lower highs).
+   - MACD line crosses below the signal line (bearish crossover).
+   - MACD Histogram is negative and decreasing.
+   - CCI is above -100 (indicating no extreme oversold condition).
+
+---
+
+### Exit Rules:
+1. **Bullish Exit**:
+   - CCI rises above +100, indicating strong bullish trend strength.
+   - MACD Histogram starts decreasing after a peak.
+   - RSI crosses below 70 (overbought condition).
+
+2. **Bearish Exit**:
+   - CCI falls below -100, indicating strong bearish trend strength.
+   - MACD Histogram starts increasing after a trough.
+   - RSI crosses above 30 (oversold condition).
+
+---
+
+### Risk Management:
+1. **Stop Loss**:
+   - Place stop loss below the recent swing low for long trades.
+   - Place stop loss above the recent swing high for short trades.
+   - Use a fixed percentage (e.g., 1-2% of account balance) or ATR-based stop loss.
+
+2. **Position Sizing**:
+   - Risk no more than 1-2% of the account balance per trade.
+   - Adjust position size based on stop loss distance.
+
+3. **Take Profit**:
+   - Use a risk-reward ratio of at least 1:2.
+   - Consider trailing stops to lock in profits during strong trends.
+
+---
+
+### Additional Notes:
+- **Timeframe**: Best suited for 1-hour (H1) or 4-hour (H4) charts.
+- **Market Conditions**: Works well in ranging or mildly trending markets. Avoid trading during extreme volatility or news events.
+- **Confirmation**: Wait for candle closes to confirm signals and avoid false entries.
+
+This strategy combines divergence, momentum, and trend strength to create a robust trading system. Always backtest and optimize parameters for your specific trading instrument and market conditions.

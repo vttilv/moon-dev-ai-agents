@@ -1,0 +1,65 @@
+STRATEGY_NAME: VoltaConverge
+
+STRATEGY_DETAILS:
+The VoltaConverge strategy is a volatility-based trading approach that combines MACD divergence and RSI convergence to identify high-probability entry and exit points. This strategy is designed to capitalize on market reversals during periods of heightened volatility, making it particularly effective in trending and volatile markets.
+
+### Key Strategy Components:
+1. **MACD Divergence**: 
+   - MACD (Moving Average Convergence Divergence) is used to identify potential trend reversals. Divergence occurs when the price moves in the opposite direction of the MACD line, signaling a weakening trend.
+   - Bullish Divergence: Price makes a lower low, but MACD makes a higher low.
+   - Bearish Divergence: Price makes a higher high, but MACD makes a lower high.
+
+2. **RSI Convergence**:
+   - RSI (Relative Strength Index) is used to confirm the strength of the trend and identify overbought or oversold conditions.
+   - Convergence occurs when the RSI moves in the same direction as the price, confirming the trend's strength.
+   - Overbought: RSI above 70.
+   - Oversold: RSI below 30.
+
+3. **Volatility Filter**:
+   - A volatility filter, such as ATR (Average True Range), is used to ensure that trades are only taken during periods of sufficient volatility, reducing the risk of false signals in low-volatility conditions.
+
+### Entry Rules:
+1. **Bullish Entry**:
+   - MACD shows bullish divergence (price makes a lower low, MACD makes a higher low).
+   - RSI is in oversold territory (below 30) and starts to converge with the price (RSI moves upward as price moves upward).
+   - Volatility filter (ATR) is above a predefined threshold, indicating sufficient market activity.
+
+2. **Bearish Entry**:
+   - MACD shows bearish divergence (price makes a higher high, MACD makes a lower high).
+   - RSI is in overbought territory (above 70) and starts to converge with the price (RSI moves downward as price moves downward).
+   - Volatility filter (ATR) is above a predefined threshold, indicating sufficient market activity.
+
+### Exit Rules:
+1. **Take Profit**:
+   - Set a take profit level based on a multiple of the ATR (e.g., 2x ATR) to ensure that the trade captures sufficient profit during volatile moves.
+   - Alternatively, exit when the RSI reaches the opposite extreme (e.g., overbought for a long trade or oversold for a short trade).
+
+2. **Stop Loss**:
+   - Place a stop loss below the recent swing low for long trades or above the recent swing high for short trades.
+   - Alternatively, use a fixed percentage or ATR-based stop loss to manage risk.
+
+### Risk Management:
+1. **Position Sizing**:
+   - Use a fixed percentage of the trading capital (e.g., 1-2%) per trade to ensure that no single trade can significantly impact the overall portfolio.
+   
+2. **Volatility Adjustment**:
+   - Adjust position sizes based on current market volatility. Larger positions can be taken during high volatility, while smaller positions are taken during low volatility.
+
+3. **Diversification**:
+   - Avoid over-concentration in a single asset or market. Spread trades across different instruments to reduce risk.
+
+### Required Indicators:
+1. **MACD (Moving Average Convergence Divergence)**:
+   - Parameters: Fast Length (12), Slow Length (26), Signal Smoothing (9).
+   - Used to identify divergence and potential trend reversals.
+
+2. **RSI (Relative Strength Index)**:
+   - Parameters: Period (14).
+   - Used to identify overbought/oversold conditions and confirm trend strength.
+
+3. **ATR (Average True Range)**:
+   - Parameters: Period (14).
+   - Used as a volatility filter to ensure trades are taken only during periods of sufficient market activity.
+
+### Summary:
+The VoltaConverge strategy is a robust approach to trading volatile markets, combining the predictive power of MACD divergence with the confirmation strength of RSI convergence. By incorporating a volatility filter, the strategy ensures that trades are only taken during periods of high market activity, reducing the risk of false signals. Proper risk management, including position sizing and stop-loss placement, is crucial to the strategy's success. This strategy is best suited for traders who are comfortable with medium to high volatility and are looking to capitalize on trend reversals.

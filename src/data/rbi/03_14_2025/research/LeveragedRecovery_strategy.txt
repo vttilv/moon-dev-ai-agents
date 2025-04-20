@@ -1,0 +1,43 @@
+STRATEGY_NAME: LeveragedRecovery
+
+STRATEGY_DETAILS:
+The LeveragedRecovery strategy is a dynamic approach that combines RSI-based mean reversion with leveraged re-entry and partial profit-taking. It focuses on capitalizing on oversold conditions while managing risk through position sizing and profit-taking.
+
+Key Strategy Components:
+1. RSI (Relative Strength Index) as the primary indicator
+2. Position sizing and leverage management
+3. Partial profit-taking mechanism
+4. Conditional re-entry system
+
+Entry Rules:
+1. Initial long position is assumed to be already open (strategy focuses on management of existing positions)
+2. Monitor RSI for oversold conditions (below 30)
+
+Exit and Re-entry Rules:
+1. When RSI drops below 30:
+   - Sell 70% of the current long position
+   - Prepare for leveraged re-entry
+2. If price recovers and RSI moves above 60 on the next candle:
+   - Buy back the sold position with 20% additional leverage
+   - Take 50% profit from the recovered position
+
+Risk Management:
+1. Position sizing:
+   - Only 70% of the position is liquidated during RSI drop
+   - Maintains 30% exposure to potential upside
+2. Leverage control:
+   - 20% additional leverage on re-entry balances risk and potential reward
+3. Profit-taking:
+   - 50% profit-taking on recovery locks in gains while maintaining exposure
+
+Required Indicators:
+1. RSI (Relative Strength Index) with standard 14-period setting
+2. Price chart for candle analysis
+
+Additional Considerations:
+1. Timeframe: Works best on 1-hour or 4-hour charts for reliable RSI signals
+2. Asset Selection: Best suited for trending or range-bound markets with clear support/resistance levels
+3. Leverage Management: Ensure proper margin requirements are met for the 20% additional leverage
+4. Stop-loss: Consider implementing a stop-loss below key support levels for the remaining 30% position
+
+This strategy is particularly effective in volatile markets where oversold conditions frequently occur, allowing for multiple opportunities to capitalize on price recoveries while managing risk through partial position management and controlled leverage.

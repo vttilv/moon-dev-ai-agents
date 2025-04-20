@@ -1,0 +1,30 @@
+STRATEGY_NAME: HarmonicStochastic
+
+STRATEGY_DETAILS:
+The HarmonicStochastic strategy is a high-frequency breakout trading system that combines the Harmonic Oscillator and Stochastic Convergence to identify precise entry and exit points. This strategy is designed for short-term traders who can capitalize on rapid price movements and momentum shifts.
+
+Key Strategy Components:
+1. Harmonic Oscillator: This indicator measures the rate of change in price momentum and helps identify overbought or oversold conditions.
+2. Stochastic Convergence: This indicator shows the relationship between the current price and its range over a specific period, helping to confirm potential breakouts.
+
+Entry Rules:
+1. Wait for the Harmonic Oscillator to cross above the 70 level (overbought) or below the 30 level (oversold).
+2. Confirm the signal with Stochastic Convergence; the %K line should cross above the %D line for a buy signal or below the %D line for a sell signal.
+3. Enter a trade when both indicators align, indicating a strong breakout potential.
+
+Exit Rules:
+1. Set a take-profit level at 1.5 times the average true range (ATR) from the entry point.
+2. Place a stop-loss order at 0.5 times the ATR from the entry point.
+3. Exit the trade if the Harmonic Oscillator reverses direction and crosses back below the 70 level (for long positions) or above the 30 level (for short positions).
+
+Risk Management:
+1. Risk no more than 1% of your trading capital on any single trade.
+2. Use position sizing to ensure that your stop-loss distance aligns with your risk tolerance.
+3. Avoid trading during major news events or periods of low liquidity to minimize slippage and unexpected volatility.
+
+Required Indicators:
+1. Harmonic Oscillator (settings: period = 14)
+2. Stochastic Convergence (settings: %K period = 14, %D period = 3, slowing = 3)
+3. Average True Range (ATR) (settings: period = 14)
+
+This strategy is best suited for traders who can monitor the markets closely and execute trades quickly. It is particularly effective in trending markets with clear momentum shifts. Always backtest the strategy on historical data before applying it to live trading to ensure its effectiveness in your specific market conditions.

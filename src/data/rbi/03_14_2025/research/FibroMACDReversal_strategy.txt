@@ -1,0 +1,74 @@
+STRATEGY_NAME: FibroMACD Reversal
+
+STRATEGY_DETAILS:
+The FibroMACD Reversal strategy is designed to identify potential trend reversals by combining Fibonacci retracement levels with MACD crossovers. This strategy leverages the precision of Fibonacci levels to pinpoint key support and resistance zones, while the MACD crossover confirms momentum shifts. Here's a detailed breakdown of the strategy:
+
+---
+
+### **Key Strategy Components**
+1. **Fibonacci Retracement Levels**: 
+   - Identify the most recent significant swing high and swing low on the price chart.
+   - Draw Fibonacci retracement levels (23.6%, 38.2%, 50%, 61.8%, and 78.6%) between these two points.
+   - Focus on the 38.2%, 50%, and 61.8% levels as they are the most commonly respected retracement zones.
+
+2. **MACD Indicator**:
+   - Use the standard MACD settings (12, 26, 9).
+   - Monitor the MACD line (blue) and the signal line (orange) for crossovers.
+
+---
+
+### **Entry Rules**
+1. **Bullish Reversal Entry**:
+   - Price must retrace to a key Fibonacci level (38.2%, 50%, or 61.8%).
+   - Simultaneously, the MACD line must cross **above** the signal line.
+   - Enter a long position when both conditions are met.
+
+2. **Bearish Reversal Entry**:
+   - Price must retrace to a key Fibonacci level (38.2%, 50%, or 61.8%).
+   - Simultaneously, the MACD line must cross **below** the signal line.
+   - Enter a short position when both conditions are met.
+
+---
+
+### **Exit Rules**
+1. **Take Profit**:
+   - Set take-profit levels at the next Fibonacci extension level (e.g., 127.2% or 161.8%).
+   - Alternatively, use a trailing stop to capture extended trends.
+
+2. **Stop Loss**:
+   - Place the stop loss just below the recent swing low for long positions or above the recent swing high for short positions.
+   - Alternatively, use the ATR (Average True Range) indicator to set a dynamic stop loss.
+
+---
+
+### **Risk Management**
+1. **Position Sizing**:
+   - Risk no more than 1-2% of your trading capital on any single trade.
+   - Adjust position size based on the distance between entry and stop-loss levels.
+
+2. **Risk-Reward Ratio**:
+   - Aim for a minimum risk-reward ratio of 1:2 or higher.
+   - Avoid trades where the potential reward does not justify the risk.
+
+---
+
+### **Required Indicators**
+1. **Fibonacci Retracement Tool**:
+   - Available on most trading platforms.
+   - Used to identify key retracement levels.
+
+2. **MACD (Moving Average Convergence Divergence)**:
+   - Standard settings: 12, 26, 9.
+   - Used to confirm momentum shifts.
+
+3. **Optional: ATR (Average True Range)**:
+   - Helps set dynamic stop-loss levels based on market volatility.
+
+---
+
+### **Additional Notes**
+- **Confirmation**: Wait for a candlestick close beyond the Fibonacci level to confirm the reversal.
+- **Timeframe**: This strategy works best on higher timeframes (1H, 4H, or Daily) for more reliable signals.
+- **Market Conditions**: Avoid using this strategy during low volatility or choppy market conditions, as false signals may occur.
+
+By combining Fibonacci retracement levels with MACD crossovers, the FibroMACD Reversal strategy provides a robust framework for identifying high-probability trend reversal opportunities.

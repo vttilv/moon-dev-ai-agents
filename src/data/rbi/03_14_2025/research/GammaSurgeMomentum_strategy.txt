@@ -1,0 +1,41 @@
+STRATEGY_NAME: GammaSurgeMomentum
+
+STRATEGY_DETAILS:
+The GammaSurgeMomentum strategy capitalizes on the heightened volatility and price momentum that often occurs after the expiration of large S&P 500 options contracts. This strategy focuses on the 2-hour window post-expiration, leveraging the gamma squeeze effect and subsequent price movements.
+
+### Key Strategy Components:
+1. **Options Expiration Focus**: Targets the largest S&P 500 options contracts, which typically have significant market impact.
+2. **Time Window**: Trades are initiated within the 2-hour period immediately following expiration.
+3. **Momentum Target**: Aims for a 10% price move within 3 consecutive days.
+4. **Volatility Exploitation**: Utilizes the increased volatility and liquidity shifts post-expiration.
+
+### Entry Rules:
+1. **Timing**: Enter long positions only during the 2-hour window after the largest S&P 500 options contracts expire.
+2. **Confirmation**: Use a 5-minute chart to confirm upward momentum. Look for:
+   - A breakout above the previous 2-hour high.
+   - Increasing volume during the breakout.
+   - A bullish MACD crossover (12, 26, 9) on the 5-minute chart.
+3. **Position Size**: Allocate a fixed percentage of capital (e.g., 2-3%) per trade to manage risk.
+
+### Exit Rules:
+1. **Profit Target**: Close the position when a 10% gain is achieved within 3 consecutive days.
+2. **Stop Loss**: Set a stop loss at 2% below the entry price to limit downside risk.
+3. **Time Exit**: If the 10% target is not met within 3 days, exit the position regardless of profit or loss.
+
+### Risk Management:
+1. **Position Sizing**: Use a fixed percentage of capital per trade to ensure consistency.
+2. **Stop Loss**: Strictly adhere to the 2% stop loss to protect against adverse moves.
+3. **Diversification**: Avoid overconcentration by limiting the number of simultaneous trades.
+4. **Market Conditions**: Avoid trading during major news events or holidays that could distort normal market behavior.
+
+### Required Indicators:
+1. **MACD (12, 26, 9)**: To confirm momentum and trend direction.
+2. **Volume Indicator**: To validate the strength of the breakout.
+3. **Price Chart (5-minute)**: For precise entry timing and monitoring.
+
+### Additional Notes:
+- **Backtesting**: Test the strategy on historical data to ensure its effectiveness during similar market conditions.
+- **Adaptability**: Adjust the 2-hour window and 10% target based on evolving market dynamics.
+- **Execution Speed**: Ensure fast execution to capitalize on the narrow 2-hour window.
+
+This strategy is designed for traders who can act quickly and are comfortable with short-term, high-volatility trades. It leverages the unique market conditions created by options expiration to capture significant price movements.

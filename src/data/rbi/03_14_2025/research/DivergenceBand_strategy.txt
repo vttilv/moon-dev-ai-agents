@@ -1,0 +1,56 @@
+STRATEGY_NAME: DivergenceBand
+
+STRATEGY_DETAILS:
+The DivergenceBand strategy is a sophisticated trend-following approach that combines MACD divergence signals, RSI overbought/oversold confirmation, and Bollinger Bands width monitoring for precise entries and exits. Here's a detailed breakdown of the strategy:
+
+---
+
+### **Key Strategy Components**
+1. **MACD Divergence**: Identifies potential trend reversals or continuations by comparing price action with MACD histogram movements.
+2. **RSI Confirmation**: Uses RSI overbought (above 70) or oversold (below 30) levels to validate MACD divergence signals.
+3. **Bollinger Bands Width**: Monitors the width of Bollinger Bands to determine market volatility and exit points.
+
+---
+
+### **Entry Rules**
+1. **Bullish Entry**:
+   - MACD histogram shows bullish divergence (price makes a lower low, but MACD makes a higher low).
+   - RSI is below 30 (oversold) to confirm the bullish signal.
+   - Enter a long position when the price closes above the middle Bollinger Band (20-period SMA).
+
+2. **Bearish Entry**:
+   - MACD histogram shows bearish divergence (price makes a higher high, but MACD makes a lower high).
+   - RSI is above 70 (overbought) to confirm the bearish signal.
+   - Enter a short position when the price closes below the middle Bollinger Band (20-period SMA).
+
+---
+
+### **Exit Rules**
+1. **Bollinger Bands Width Monitoring**:
+   - Exit long positions when the Bollinger Bands width contracts significantly (indicating reduced volatility and potential trend exhaustion).
+   - Exit short positions under the same condition.
+
+2. **Stop-Loss**:
+   - Place a stop-loss below the recent swing low for long positions or above the recent swing high for short positions.
+
+3. **Take-Profit**:
+   - Use a trailing stop based on the Bollinger Bands (e.g., exit when the price crosses the opposite band).
+
+---
+
+### **Risk Management**
+1. **Position Sizing**: Risk no more than 1-2% of the trading capital per trade.
+2. **Stop-Loss Placement**: Ensure stop-loss levels are placed at logical support/resistance levels.
+3. **Volatility Filter**: Avoid trading during periods of extremely low Bollinger Bands width (indicating low volatility and potential false signals).
+
+---
+
+### **Required Indicators**
+1. **MACD (12, 26, 9)**: For divergence analysis.
+2. **RSI (14-period)**: For overbought/oversold confirmation.
+3. **Bollinger Bands (20-period, 2 standard deviations)**: For entry/exit signals and volatility monitoring.
+
+---
+
+### **Summary**
+The DivergenceBand strategy is designed to capture trends early using MACD divergence and RSI confirmation, while managing risk and exits effectively through Bollinger Bands width analysis. It is ideal for traders looking to combine momentum and volatility-based signals in a systematic way.

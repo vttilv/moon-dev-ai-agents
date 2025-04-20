@@ -1,0 +1,43 @@
+STRATEGY_NAME: VolatilityBreakout
+
+STRATEGY_DETAILS:
+The VolatilityBreakout strategy is designed to capitalize on strong uptrends by identifying breakout opportunities using Bollinger Bands, volume analysis, and RSI divergence. The strategy focuses on high-probability entries during periods of increased volatility and momentum, with exits determined by ATR-based volatility bounds.
+
+Key Strategy Components:
+1. Bollinger Bands: Used to identify price breakouts above the upper band, signaling strong upward momentum.
+2. Volume Analysis: Confirms the strength of the breakout with above-average trading volume.
+3. RSI Divergence: Identifies bullish momentum divergence to confirm the strength of the trend.
+4. ATR (Average True Range): Sets dynamic exit points based on market volatility.
+
+Entry Rules:
+1. Wait for price to break above the upper Bollinger Band.
+2. Confirm the breakout with above-average trading volume (e.g., volume > 20-period SMA of volume).
+3. Validate the setup with bullish RSI divergence (price making higher lows while RSI makes higher lows).
+4. Enter a long position when all three conditions are met.
+
+Exit Rules:
+1. Calculate ATR-based volatility bounds:
+   - Upper Bound: Entry Price + (2 * ATR)
+   - Lower Bound: Entry Price - (1 * ATR)
+2. Take profit at the Upper Bound.
+3. Set stop-loss at the Lower Bound.
+4. Exit immediately if price closes below the middle Bollinger Band.
+
+Risk Management:
+1. Position sizing based on 1-2% risk per trade.
+2. Use ATR-based stop-loss to adapt to market volatility.
+3. Avoid trading during low-volume periods or major economic events.
+4. Maximum daily loss limit of 5% of account equity.
+
+Required Indicators:
+1. Bollinger Bands (20-period, 2 standard deviations)
+2. Volume (20-period SMA for comparison)
+3. RSI (14-period)
+4. ATR (14-period)
+
+Additional Notes:
+- This strategy performs best in trending markets and may produce false signals during choppy or range-bound conditions.
+- Consider using a time filter (e.g., only trade during the first 4 hours of the session) to focus on the most liquid market periods.
+- Backtest the strategy on your specific market and timeframe to optimize parameters.
+
+The VolatilityBreakout strategy combines technical indicators with volume and volatility analysis to create a systematic approach for capturing strong trending moves while managing risk effectively.

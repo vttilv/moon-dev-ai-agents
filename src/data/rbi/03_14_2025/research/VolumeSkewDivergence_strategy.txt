@@ -1,0 +1,32 @@
+STRATEGY_NAME: VolumeSkewDivergence
+
+STRATEGY_DETAILS:
+The VolumeSkewDivergence strategy focuses on identifying potential breakout or reversal opportunities by analyzing high-volume divergence from the average price combined with increasing volume skew. This approach leverages the relationship between volume, price, and market sentiment to detect significant shifts in market dynamics.
+
+### Key Strategy Components:
+1. **Volume Divergence**: Measures the difference between current volume and the average volume over a specified period. High volume divergence indicates unusual trading activity.
+2. **Volume Skew**: Analyzes the distribution of volume across price levels. Increasing skew suggests a concentration of volume at specific price points, often signaling a potential breakout or reversal.
+3. **Average Price**: Calculates the mean price over a defined period to establish a baseline for divergence analysis.
+
+### Entry Rules:
+1. **High-Volume Divergence**: Enter a trade when the current volume exceeds the average volume by a significant margin (e.g., 2x or more).
+2. **Increasing Volume Skew**: Confirm the entry when the volume skew is increasing, indicating a buildup of momentum at specific price levels.
+3. **Price Confirmation**: Wait for price to break above a resistance level (for long trades) or below a support level (for short trades) to confirm the breakout or reversal.
+
+### Exit Rules:
+1. **Target Profit**: Set a profit target based on the average true range (ATR) or a predefined risk-reward ratio (e.g., 2:1).
+2. **Stop Loss**: Place a stop loss below the recent swing low (for long trades) or above the recent swing high (for short trades).
+3. **Volume Reversal**: Exit the trade if volume skew begins to decrease, signaling a loss of momentum.
+
+### Risk Management:
+1. **Position Sizing**: Use a fixed percentage of capital per trade (e.g., 1-2%) to manage risk.
+2. **Volatility Adjustment**: Adjust position size based on market volatility, reducing exposure during high-volatility periods.
+3. **Diversification**: Avoid overconcentration in a single asset or sector to mitigate unsystematic risk.
+
+### Required Indicators:
+1. **Volume Indicator**: To measure current volume and calculate average volume.
+2. **Volume Skew Indicator**: To analyze the distribution of volume across price levels.
+3. **Average Price Indicator**: To establish a baseline for divergence analysis.
+4. **ATR (Average True Range)**: To set profit targets and assess market volatility.
+
+This strategy is particularly effective in trending markets and during periods of high liquidity, where volume and price movements are more pronounced. It requires careful monitoring of volume patterns and price action to capitalize on breakout or reversal opportunities.
