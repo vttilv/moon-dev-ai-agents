@@ -60,6 +60,10 @@ PACKAGE_CONFIG = {
     "name": "deepseek-chat"  # Using Llama 3.2 for package optimization
 }
 
+
+
+################
+
 # Model Configuration
 # Using a mix of Ollama models and DeepSeek API
 # RESEARCH_CONFIG = {
