@@ -160,6 +160,7 @@ Moon Dev
 - jack ma
 - satya nadella
 - sam altman
+- david shaw
 - whitney wolfe herd
 - daniel ek
 - mark zuckerberg

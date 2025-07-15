@@ -7,7 +7,7 @@ from .base_model import BaseModel, ModelResponse
 from .claude_model import ClaudeModel
 from .groq_model import GroqModel
 from .openai_model import OpenAIModel
-from .gemini_model import GeminiModel
+# from .gemini_model import GeminiModel  # Temporarily disabled due to protobuf conflict
 from .deepseek_model import DeepSeekModel
 from .model_factory import model_factory
 
@@ -17,7 +17,7 @@ __all__ = [
     'ClaudeModel',
     'GroqModel',
     'OpenAIModel',
-    'GeminiModel',
+    # 'GeminiModel',  # Temporarily disabled due to protobuf conflict
     'DeepSeekModel',
     'model_factory'
 ] 

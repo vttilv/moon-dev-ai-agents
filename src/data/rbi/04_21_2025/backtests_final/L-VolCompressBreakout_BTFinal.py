@@ -1,4 +1,3 @@
-```python
 import pandas as pd
 import talib
 import pandas_ta as ta

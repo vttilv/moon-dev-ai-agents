@@ -14,7 +14,7 @@ from .base_model import BaseModel
 from .claude_model import ClaudeModel
 from .groq_model import GroqModel
 from .openai_model import OpenAIModel
-from .gemini_model import GeminiModel
+# from .gemini_model import GeminiModel  # Temporarily disabled due to protobuf conflict
 from .deepseek_model import DeepSeekModel
 from .ollama_model import OllamaModel
 import random
@@ -27,7 +27,7 @@ class ModelFactory:
         "claude": ClaudeModel,
         "groq": GroqModel,
         "openai": OpenAIModel,
-        "gemini": GeminiModel,
+        # "gemini": GeminiModel,  # Temporarily disabled due to protobuf conflict
         "deepseek": DeepSeekModel,
         "ollama": OllamaModel  # Add Ollama implementation
     }
@@ -37,7 +37,7 @@ class ModelFactory:
         "claude": "claude-3-5-haiku-latest",  # Latest fast Claude model
         "groq": "mixtral-8x7b-32768",        # Fast Mixtral model
         "openai": "gpt-4o",                  # Latest GPT-4 Optimized
-        "gemini": "gemini-2.0-flash",        # Latest Gemini model
+        # "gemini": "gemini-2.0-flash",        # Latest Gemini model (temporarily disabled)
         "deepseek": "deepseek-reasoner",     # Enhanced reasoning model
         "ollama": "llama3.2"                 # Meta's Llama 3.2 - balanced performance
     }
@@ -64,7 +64,7 @@ class ModelFactory:
         
         # Debug current environment without exposing values
         cprint("\n🔍 Environment Check:", "cyan")
-        for key in ["GROQ_API_KEY", "OPENAI_KEY", "ANTHROPIC_KEY", "GEMINI_KEY", "DEEPSEEK_KEY"]:
+        for key in ["GROQ_API_KEY", "OPENAI_KEY", "ANTHROPIC_KEY", "DEEPSEEK_KEY"]:  # GEMINI_KEY temporarily removed
             value = os.getenv(key)
             if value and len(value.strip()) > 0:
                 cprint(f"  ├─ {key}: Found ({len(value)} chars)", "green")
@@ -208,7 +208,7 @@ class ModelFactory:
             "claude": "ANTHROPIC_KEY",
             "groq": "GROQ_API_KEY",
             "openai": "OPENAI_KEY",
-            "gemini": "GEMINI_KEY",
+            # "gemini": "GEMINI_KEY",  # Temporarily disabled due to protobuf conflict
             "deepseek": "DEEPSEEK_KEY",
             # Ollama doesn't need an API key as it runs locally
         }

@@ -1,6 +1,3 @@
-Here's the complete fixed code with Moon Dev themed debug prints:
-
-```python
 from backtesting import Backtest, Strategy
 import pandas as pd
 import talib

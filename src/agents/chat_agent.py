@@ -685,6 +685,9 @@ class ChatAgent:
                         continue
                     cprint(f"❌ Error checking negativity: {str(e)}", "red")
                 
+                # Save all non-negative messages to chat history with score 1
+                self.save_chat_history(user, question, 1)
+                
                 # 3. For non-negative messages, check for questions
                 if "?" in question:
                     try:
