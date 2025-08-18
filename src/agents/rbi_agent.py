@@ -35,29 +35,51 @@ Remember: Past performance doesn't guarantee future results!
 """
 
 
+## Previous presets (kept for easy switching) 👇
+# RESEARCH_CONFIG = {
+#     "type": "deepseek",
+#     "name": "deepseek-chat"  # Using DeepSeek Chat for research
+# }
+# 
+# BACKTEST_CONFIG = {
+#     "type": "deepseek", 
+#     "name": "deepseek-reasoner"  # Using DeepSeek Reasoner for backtesting
+# }
+# 
+# DEBUG_CONFIG = {
+#     "type": "deepseek",
+#     "name": "deepseek-chat"  # Using DeepSeek Chat for debugging
+# }
+# 
+# # DEBUG_CONFIG = {
+# #     "type": "ollama",
+# #     "name": "deepseek-r1"  # Using Ollama's DeepSeek-R1 for debugging
+# # }
+# 
+# PACKAGE_CONFIG = {
+#     "type": "deepseek",
+#     "name": "deepseek-chat"  # Using DeepSeek Chat for package optimization
+# }
+
+# New OpenAI presets using GPT-5 for all agents 🌙🚀
 RESEARCH_CONFIG = {
-    "type": "deepseek",
-    "name": "deepseek-chat"  # Using Llama 3.2 for research
+    "type": "openai",
+    "name": "gpt-5"
 }
 
 BACKTEST_CONFIG = {
-    "type": "deepseek", 
-    "name": "deepseek-reasoner"  # Using DeepSeek API for backtesting
+    "type": "openai",
+    "name": "gpt-5"
 }
 
 DEBUG_CONFIG = {
-    "type": "deepseek",
-    "name": "deepseek-chat"  # Using Ollama's DeepSeek-R1 for debugging
+    "type": "openai",
+    "name": "gpt-5"
 }
 
-# DEBUG_CONFIG = {
-#     "type": "ollama",
-#     "name": "deepseek-r1"  # Using Ollama's DeepSeek-R1 for debugging
-# }
-
 PACKAGE_CONFIG = {
-    "type": "deepseek",
-    "name": "deepseek-chat"  # Using Llama 3.2 for package optimization
+    "type": "openai",
+    "name": "gpt-5"
 }
 
 
@@ -112,10 +134,10 @@ PACKAGE_CONFIG = {
 # "gemma:2b",     # Google's Gemma 2B model
 #         "llama3.2",
 # Using a mix of models for different tasks
-RESEARCH_MODEL = "llama3.2"           # Llama 3.2 for research
-BACKTEST_MODEL = "deepseek-reasoner"  # DeepSeek API for backtesting
-DEBUG_MODEL = "deepseek-r1"           # Ollama DeepSeek-R1 for debugging
-PACKAGE_MODEL = "llama3.2"            # Llama 3.2 for package optimization
+# RESEARCH_MODEL = "llama3.2"           # Llama 3.2 for research
+# BACKTEST_MODEL = "deepseek-reasoner"  # DeepSeek API for backtesting
+# DEBUG_MODEL = "deepseek-r1"           # Ollama DeepSeek-R1 for debugging
+# PACKAGE_MODEL = "llama3.2"            # Llama 3.2 for package optimization
 
 # AI Prompts
 
@@ -309,12 +331,14 @@ import re
 from datetime import datetime
 import requests
 from io import BytesIO
-import PyPDF2
-from youtube_transcript_api import YouTubeTranscriptApi
 import openai
-from anthropic import Anthropic
-from pathlib import Path
 from termcolor import cprint
+try:
+    from anthropic import Anthropic
+except ImportError:
+    Anthropic = None
+    cprint("⚠️ Anthropic SDK not installed. Claude models will be unavailable. (Moon Dev note)", "yellow")
+from pathlib import Path
 import threading
 import itertools
 import sys
@@ -340,8 +364,8 @@ CHARTS_DIR = TODAY_DIR / "charts"  # New directory for HTML charts
 PROCESSED_IDEAS_LOG = DATA_DIR / "processed_ideas.log"  # New file to track processed ideas
 
 # Create main directories if they don't exist
-for dir in [DATA_DIR, TODAY_DIR, RESEARCH_DIR, BACKTEST_DIR, PACKAGE_DIR, FINAL_BACKTEST_DIR, CHARTS_DIR]:
-    dir.mkdir(parents=True, exist_ok=True)
+for directory in [DATA_DIR, TODAY_DIR, RESEARCH_DIR, BACKTEST_DIR, PACKAGE_DIR, FINAL_BACKTEST_DIR, CHARTS_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)
 
 cprint(f"📂 Using RBI data directory: {DATA_DIR}")
 cprint(f"📅 Today's date folder: {TODAY_DATE}")
@@ -378,10 +402,13 @@ def init_deepseek_client():
 def init_anthropic_client():
     """Initialize Anthropic client for Claude models"""
     try:
+        if Anthropic is None:
+            cprint("⚠️ Anthropic client unavailable (package not installed)", "yellow")
+            return None
         anthropic_key = os.getenv("ANTHROPIC_KEY")
         if not anthropic_key:
-            raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
-            
+            cprint("⚠️ ANTHROPIC_KEY not found in env. Skipping Claude init.", "yellow")
+            return None
         return Anthropic(api_key=anthropic_key)
     except Exception as e:
         print(f"❌ Error initializing Anthropic client: {str(e)}")
@@ -401,6 +428,9 @@ def chat_with_model(system_prompt, user_content, model_config):
         # Debug prints for prompt lengths
         cprint(f"📝 System prompt length: {len(system_prompt)} chars", "cyan")
         cprint(f"📝 User content length: {len(user_content)} chars", "cyan")
+        # If model returned a wrapper, normalize early
+        if hasattr(model, 'model_name') and model.model_type == 'openai':
+            cprint(f"🧪 OpenAI model in use: {model.model_name}", "cyan")
 
         # For Ollama models, handle response differently
         if model_config["type"] == "ollama":
@@ -424,16 +454,34 @@ def chat_with_model(system_prompt, user_content, model_config):
                 temperature=AI_TEMPERATURE,
                 max_tokens=AI_MAX_TOKENS
             )
-            if not response:
+            if response is None:
                 cprint("❌ Model returned None response", "red")
                 return None
-                
-            if not hasattr(response, 'content'):
-                cprint(f"❌ Response missing content attribute. Response type: {type(response)}", "red")
-                cprint(f"Response attributes: {dir(response)}", "yellow")
-                return None
 
-            content = response.content
+            # Coerce response into text content
+            content = None
+            try:
+                from src.models.base_model import ModelResponse
+                if isinstance(response, ModelResponse):
+                    content = response.content
+            except Exception:
+                pass
+
+            if content is None:
+                if isinstance(response, str):
+                    content = response
+                elif hasattr(response, 'content'):
+                    content = response.content
+                else:
+                    cprint(f"❌ Response missing content attribute. Response type: {type(response)}", "red")
+                    try:
+                        cprint(f"Response attributes: {dir(response)}", "yellow")
+                    except Exception:
+                        pass
+                    return None
+
+            if not isinstance(content, str):
+                content = str(content) if content is not None else ""
             if not content or len(content.strip()) == 0:
                 cprint("❌ Model returned empty content", "red")
                 return None
@@ -455,6 +503,11 @@ def chat_with_model(system_prompt, user_content, model_config):
 def get_youtube_transcript(video_id):
     """Get transcript from YouTube video"""
     try:
+        try:
+            from youtube_transcript_api import YouTubeTranscriptApi
+        except ImportError:
+            cprint("⚠️ youtube-transcript-api not installed. Skipping YouTube transcript fetch.", "yellow")
+            return None
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         transcript = transcript_list.find_generated_transcript(['en'])
         
@@ -476,6 +529,11 @@ def get_youtube_transcript(video_id):
 def get_pdf_text(url):
     """Extract text from PDF URL"""
     try:
+        try:
+            import PyPDF2
+        except ImportError:
+            cprint("⚠️ PyPDF2 not installed. Skipping PDF extraction.", "yellow")
+            return None
         response = requests.get(url, stream=True)
         response.raise_for_status()
         
@@ -597,6 +655,17 @@ def research_strategy(content):
         # Clean the output to remove thinking tags
         output = clean_model_output(output, "text")
         
+        # Guard against non-string responses from model wrappers
+        if not isinstance(output, str):
+            try:
+                from src.models.base_model import ModelResponse
+                if isinstance(output, ModelResponse):
+                    output = output.content or ""
+                else:
+                    output = str(output)
+            except Exception:
+                output = str(output)
+        
         # Extract strategy name from output
         strategy_name = "UnknownStrategy"  # Default name
         if "STRATEGY_NAME:" in output:
@@ -652,6 +721,15 @@ def create_backtest(strategy, strategy_name="UnknownStrategy"):
     if output:
         # Clean the output and extract code from markdown
         output = clean_model_output(output, "code")
+        if not isinstance(output, str):
+            try:
+                from src.models.base_model import ModelResponse
+                if isinstance(output, ModelResponse):
+                    output = output.content or ""
+                else:
+                    output = str(output)
+            except Exception:
+                output = str(output)
         
         filepath = BACKTEST_DIR / f"{strategy_name}_BT.py"
         with open(filepath, 'w') as f:
@@ -680,6 +758,15 @@ def debug_backtest(backtest_code, strategy=None, strategy_name="UnknownStrategy"
     if output:
         # Clean the output and extract code from markdown
         output = clean_model_output(output, "code")
+        if not isinstance(output, str):
+            try:
+                from src.models.base_model import ModelResponse
+                if isinstance(output, ModelResponse):
+                    output = output.content or ""
+                else:
+                    output = str(output)
+            except Exception:
+                output = str(output)
             
         filepath = FINAL_BACKTEST_DIR / f"{strategy_name}_BTFinal.py"
         with open(filepath, 'w') as f:
@@ -704,6 +791,15 @@ def package_check(backtest_code, strategy_name="UnknownStrategy"):
     if output:
         # Clean the output and extract code from markdown
         output = clean_model_output(output, "code")
+        if not isinstance(output, str):
+            try:
+                from src.models.base_model import ModelResponse
+                if isinstance(output, ModelResponse):
+                    output = output.content or ""
+                else:
+                    output = str(output)
+            except Exception:
+                output = str(output)
             
         filepath = PACKAGE_DIR / f"{strategy_name}_PKG.py"
         with open(filepath, 'w') as f:
@@ -892,6 +988,11 @@ def main():
     
     cprint(f"🔍 Status: {already_processed} already processed, {new_ideas} new ideas", "cyan")
     
+    # Optional: limit number of ideas via env var (for quick debugging)
+    max_ideas_env = os.getenv("RBI_MAX_IDEAS")
+    max_ideas = int(max_ideas_env) if max_ideas_env and max_ideas_env.isdigit() else None
+    processed_count = 0
+
     for i, idea in enumerate(ideas, 1):
         # Check if this idea has already been processed
         if is_idea_processed(idea):
@@ -920,6 +1021,10 @@ def main():
             if i < total_ideas:
                 cprint("😴 Taking a break before next idea...", "yellow")
                 time.sleep(5)
+            processed_count += 1
+            if max_ideas and processed_count >= max_ideas:
+                cprint("🛑 Reached RBI_MAX_IDEAS limit, exiting after quick debug run.", "yellow")
+                break
                 
         except Exception as e:
             cprint(f"\n❌ Error processing idea {i}: {str(e)}", "red")

@@ -17,6 +17,7 @@ DEEPSEEK_KEY=your_key_here     # For DeepSeek models
 
 ### OpenAI Models
 Latest Models:
+- `gpt-5`: Next-generation GPT model (use when you want the strongest reasoning + code generation)
 - `gpt-4o`: Latest GPT-4 Optimized model (Best for complex reasoning)
 - `gpt-4o-mini`: Smaller, faster GPT-4 Optimized model (Good balance of speed/quality)
 - `o1`: Latest O1 model (Dec 2024) - Shows reasoning process

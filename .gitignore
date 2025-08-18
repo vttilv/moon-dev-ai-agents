@@ -153,3 +153,6 @@ src/data/videos/youtube_materials/**/*.mp3
 binance_trades.csv
 *.csv.gz
 *.parquet
+
+# Ignore large video files (assistant)
+src/data/chat_agent/*.mov

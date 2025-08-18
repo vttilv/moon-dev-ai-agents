@@ -1,6 +1,3 @@
-Here's the complete implementation of the FibCloudTrend strategy for backtesting.py:
-
-```python
 import pandas as pd
 import talib
 import numpy as np
