@@ -96,6 +96,15 @@ SLEEP_BETWEEN_RUNS_MINUTES = 15  # How long to sleep between agent runs 🕒
 MIN_TRADES_LAST_HOUR = 2
 
 
+# Real-Time Clips Agent Settings 🎬
+REALTIME_CLIPS_ENABLED = True
+REALTIME_CLIPS_OBS_FOLDER = '/Volumes/Moon 26/OBS'  # Your OBS recording folder
+REALTIME_CLIPS_AUTO_INTERVAL = 120  # Check every N seconds (120 = 2 minutes)
+REALTIME_CLIPS_LENGTH = 2  # Minutes to analyze per check
+REALTIME_CLIPS_AI_MODEL = 'groq'  # Model type: groq, openai, claude, deepseek, xai, ollama
+REALTIME_CLIPS_AI_MODEL_NAME = None  # None = use default for model type
+REALTIME_CLIPS_TWITTER = True  # Auto-open Twitter compose after clip
+
 # Future variables (not active yet) 🔮
 sell_at_multiple = 3
 USDC_SIZE = 1

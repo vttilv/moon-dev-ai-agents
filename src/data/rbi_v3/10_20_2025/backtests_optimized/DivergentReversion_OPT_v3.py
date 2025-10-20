@@ -1,138 +1,177 @@
 import pandas as pd
-import talib
 import numpy as np
 from backtesting import Backtest, Strategy
+import talib
 
-# Load data
-data_path = '/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv'
-df = pd.read_csv(data_path)
+path = '/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/rbi/BTC-USD-15m.csv'
 
-# Clean column names
-df.columns = df.columns.str.strip().str.lower()
-
-# Drop any unnamed columns
-df = df.drop(columns=[col for col in df.columns if 'unnamed' in col.lower()])
-
-# Set datetime as index
-df = df.set_index(pd.to_datetime(df['datetime']))
-
-# Rename columns properly
-df.rename(columns={'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'}, inplace=True)
-
-# Sort index to ensure chronological order
-df = df.sort_index()
-
-# Ensure required columns
-print("🌙 Moon Dev: Data loaded and cleaned. Shape:", df.shape)
-print("Columns:", df.columns.tolist())
+data = pd.read_csv(path)
+data.columns = data.columns.str.strip().str.lower()
+data = data.drop(columns=[col for col in data.columns if 'unnamed' in col.lower()])
+data = data.rename(columns={
+    'open': 'Open',
+    'high': 'High',
+    'low': 'Low',
+    'close': 'Close',
+    'volume': 'Volume'
+})
+data = data.set_index(pd.to_datetime(data['datetime']))
 
 class DivergentReversion(Strategy):
-    adx_threshold = 20  # 🌙 Moon Dev Optimization: Tightened ADX threshold from 25 to 20 for stronger ranging market filter to avoid weak signals
-    risk_per_trade = 0.01  # 1% risk kept for controlled exposure
-    atr_multiplier_sl = 1.5  # 🌙 Moon Dev Optimization: Reduced SL multiplier from 2 to 1.5 for tighter stops, improving RR
-    atr_multiplier_tp = 4.5  # 🌙 Moon Dev Optimization: Increased TP multiplier from 4 to 4.5 for better 1:3 RR to boost returns on winners
+    bb_period = 20
+    bb_std = 2.0
+    rsi_period = 14
+    vol_period = 20
+    vol_mult = 1.2  # 🌙 Reduced from 1.5 to allow more volume-confirmed entries for higher trade frequency without excessive noise
+    atr_period = 14
+    risk_pct = 0.02  # 🌙 Increased from 0.01 to 0.02 for larger position sizes, aiming for compounded returns toward 50% target
+    sl_mult = 2.0  # 🌙 Increased from 1.5 to 2.0 for wider stops, reducing premature exits in volatile BTC 15m while managing risk
+    lookback_div = 10  # 🌙 Increased from 5 to 10 for better divergence detection over slightly longer recent history
+    max_bars = 20  # 🌙 Increased from 15 to 20 to give trades more time to revert in choppy conditions
+    ema_period = 200  # 🌙 New: Added long-term EMA for trend filter to avoid counter-trend trades
+    rsi_long_threshold = 30  # 🌙 New: RSI oversold threshold for long entries to tighten quality
+    rsi_short_threshold = 70  # 🌙 New: RSI overbought threshold for short entries to tighten quality
+    rr_ratio = 2.0  # 🌙 New: Risk-reward ratio for take-profit to lock in profits at 2:1, improving win rate contribution to returns
 
     def init(self):
-        # RSI(20)
-        self.rsi = self.I(talib.RSI, self.data.Close, timeperiod=20)
-        self.rsi_sma = self.I(talib.SMA, self.rsi, timeperiod=20)
-        
-        # Stochastic %K(8)
-        self.stoch_k, _ = self.I(talib.STOCH, self.data.High, self.data.Low, self.data.Close,
-                                  fastk_period=8, slowk_period=1, slowd_period=1)
-        self.stoch_sma = self.I(talib.SMA, self.stoch_k, timeperiod=20)
-        
-        # ATR(14) for dynamic stops
-        self.atr = self.I(talib.ATR, self.data.High, self.data.Low, self.data.Close, timeperiod=14)
-        
-        # ADX(14) for trend filter
-        self.adx = self.I(talib.ADX, self.data.High, self.data.Low, self.data.Close, timeperiod=14)
-        
-        # 🌙 Moon Dev Optimization: Added volume SMA for confirmation filter to avoid low-volume fakeouts
-        self.vol_sma = self.I(talib.SMA, self.data.Volume, timeperiod=20)
-        
-        # 🌙 Moon Dev Optimization: Added 200-period EMA as a loose trend filter to bias longs in uptrends/shorts in downtrends for BTC's overall bias
-        self.ema_200 = self.I(talib.EMA, self.data.Close, timeperiod=200)
-        
-        print("🌙 Moon Dev: Indicators initialized ✨")
+        upper, middle, lower = self.I(talib.BBANDS, self.data.Close, timeperiod=self.bb_period, nbdevup=self.bb_std, nbdevdn=self.bb_std)
+        self.bb_upper = upper
+        self.bb_middle = middle
+        self.bb_lower = lower
+        self.rsi = self.I(talib.RSI, self.data.Close, timeperiod=self.rsi_period)
+        self.vol_sma = self.I(talib.SMA, self.data.Volume, timeperiod=self.vol_period)
+        self.atr = self.I(talib.ATR, self.data.High, self.data.Low, self.data.Close, timeperiod=self.atr_period)
+        self.ema200 = self.I(talib.EMA, self.data.Close, timeperiod=self.ema_period)  # 🌙 New: Trend filter EMA
+        self.entry_bar = None
+        self.tp_price = None  # 🌙 New: Track take-profit price for RR-based exits
+        self.initial_risk_dist = None  # 🌙 New: Track initial risk distance for TP calculation
+        print("🌙 DivergentReversion Strategy Initialized ✨")
 
     def next(self):
-        # 🌙 Moon Dev Optimization: Added trailing stop logic for positions (trail after 1.5x ATR profit to lock in gains)
+        if len(self.data) < max(self.bb_period, self.rsi_period, self.atr_period, self.lookback_div, self.ema_period) + 1:
+            return
+
+        close = self.data.Close[-1]
+        high = self.data.High[-1]
+        low = self.data.Low[-1]
+        volume = self.data.Volume[-1]
+        upper = self.bb_upper[-1]
+        lower = self.bb_lower[-1]
+        middle = self.bb_middle[-1]
+        v_sma = self.vol_sma[-1]
+        atr_val = self.atr[-1]
+        rsi_val = self.rsi[-1]
+        ema200_val = self.ema200[-1]  # 🌙 New: EMA for trend filter
+
+        # Debug prints for overextension
+        if close < lower:
+            vol_ratio = volume / v_sma if v_sma > 0 else 0
+            print(f"🌙 Overextended LOW detected: Close {close:.2f} < Lower BB {lower:.2f}, RSI {rsi_val:.2f}, Vol Ratio {vol_ratio:.2f} 🚀")
+        if close > upper:
+            vol_ratio = volume / v_sma if v_sma > 0 else 0
+            print(f"🌙 Overextended HIGH detected: Close {close:.2f} > Upper BB {upper:.2f}, RSI {rsi_val:.2f}, Vol Ratio {vol_ratio:.2f} 🚀")
+
+        # Handle existing position
         if self.position:
-            current_profit = abs(self.position.pl_pnl) / self.position.size if self.position.size != 0 else 0
-            atr_val = self.atr[-1]
-            trail_trigger = 1.5 * atr_val
-            if current_profit > trail_trigger:
-                # Trail SL to entry + 1 ATR for longs, entry - 1 ATR for shorts
-                if self.position.is_long:
-                    new_sl = self.position.avg_entry_price + atr_val
-                    if new_sl > self.position.sl:
-                        self.position.sl = new_sl
-                else:
-                    new_sl = self.position.avg_entry_price - atr_val
-                    if new_sl < self.position.sl:
-                        self.position.sl = new_sl
-                print(f"🌙 Moon Dev: Trailing SL updated to {self.position.sl:.2f} 🔒")
-        
-        # Check for exits if in position
-        if self.position.is_long:
-            if (self.rsi[-1] > self.rsi_sma[-1]) or (self.stoch_k[-1] < self.stoch_sma[-1]):
+            bars_in = len(self.data) - self.entry_bar if self.entry_bar is not None else 0
+            if bars_in > self.max_bars:
                 self.position.close()
-                print(f"🌙 Moon Dev: Long Exit on Reversion Signal at {self.data.Close[-1]:.2f} 🚀")
-            return
-        elif self.position.is_short:
-            if (self.rsi[-1] < self.rsi_sma[-1]) or (self.stoch_k[-1] > self.stoch_sma[-1]):
-                self.position.close()
-                print(f"🌙 Moon Dev: Short Exit on Reversion Signal at {self.data.Close[-1]:.2f} 🚀")
-            return
-        
-        # Entry conditions only if no position and sufficient data
-        if (not self.position) and (len(self.rsi) > 200):  # 🌙 Moon Dev Optimization: Increased data length check to 200 for EMA maturity
-            if self.adx[-1] < self.adx_threshold and self.data.Volume[-1] > self.vol_sma[-1]:  # Added volume filter for higher quality entries
-                
-                entry_price = self.data.Close[-1]
-                atr_val = self.atr[-1]
-                
-                # 🌙 Moon Dev Optimization: Added symmetric long entries for balance in BTC's uptrending nature
-                # Long entry: RSI oversold (below SMA) + Stoch divergence (K above SMA) + above EMA200 bias
-                if (self.rsi[-1] < self.rsi_sma[-1]) and (self.stoch_k[-1] > self.stoch_sma[-1]) and (entry_price > self.ema_200[-1]):
-                    sl_price = entry_price - (self.atr_multiplier_sl * atr_val)
-                    tp_price = entry_price + (self.atr_multiplier_tp * atr_val)
-                    risk_distance = entry_price - sl_price
-                    
-                    equity = self.equity
-                    risk_amount = equity * self.risk_per_trade
-                    position_size = risk_amount / risk_distance
-                    # 🌙 Moon Dev Optimization: Allow fractional sizing (0-1) for precision in crypto backtesting
-                    position_size = min(position_size / entry_price, 1.0)  # Normalize to fraction of equity, cap at 100%
-                    
-                    if position_size > 0.01 and not np.isnan(sl_price) and not np.isnan(tp_price) and sl_price < entry_price < tp_price:
-                        self.buy(size=position_size, limit=entry_price, sl=sl_price, tp=tp_price)
-                        print(f"🌙 Moon Dev: Long Entry at {entry_price:.2f}, Size: {position_size:.4f}, SL: {sl_price:.2f}, TP: {tp_price:.2f} ✨")
-                    else:
-                        print("🌙 Moon Dev: Invalid long position size or SL/TP levels, skipping entry ⚠️")
+                print(f"🌙 Time-based EXIT after {bars_in} bars ✨")
+                return
+
+            # 🌙 New: RR-based Take Profit
+            if self.tp_price is not None:
+                if self.position.is_long and close >= self.tp_price:
+                    self.position.close()
+                    print(f"🌙 LONG TP EXIT at {close:.2f} (Target {self.tp_price:.2f}, RR {self.rr_ratio}:1) 🚀")
                     return
-                
-                # Short entry: RSI overbought (above SMA) + Stoch divergence (K below SMA) + below EMA200 bias
-                if (self.rsi[-1] > self.rsi_sma[-1]) and (self.stoch_k[-1] < self.stoch_sma[-1]) and (entry_price < self.ema_200[-1]):
-                    sl_price = entry_price + (self.atr_multiplier_sl * atr_val)
-                    tp_price = entry_price - (self.atr_multiplier_tp * atr_val)
-                    risk_distance = sl_price - entry_price
-                    
-                    equity = self.equity
-                    risk_amount = equity * self.risk_per_trade
-                    position_size = risk_amount / risk_distance
-                    position_size = min(position_size / entry_price, 1.0)  # Normalize to fraction
-                    
-                    if position_size > 0.01 and not np.isnan(sl_price) and not np.isnan(tp_price) and tp_price < entry_price < sl_price:
-                        self.sell(size=position_size, limit=entry_price, sl=sl_price, tp=tp_price)
-                        print(f"🌙 Moon Dev: Short Entry at {entry_price:.2f}, Size: {position_size:.4f}, SL: {sl_price:.2f}, TP: {tp_price:.2f} ✨")
-                    else:
-                        print("🌙 Moon Dev: Invalid short position size or SL/TP levels, skipping entry ⚠️")
+                elif self.position.is_short and close <= self.tp_price:
+                    self.position.close()
+                    print(f"🌙 SHORT TP EXIT at {close:.2f} (Target {self.tp_price:.2f}, RR {self.rr_ratio}:1) 🚀")
+                    return
 
-# Run backtest
-bt = Backtest(df, DivergentReversion, cash=1000000, commission=0.002, exclusive_orders=True, trade_on_close=True)
+            # Existing mean reversion exits
+            if self.position.is_long and close > middle:
+                self.position.close()
+                print(f"🌙 LONG Reversion EXIT to mean at {close:.2f} (Middle BB {middle:.2f}) 🚀")
+                return
+            elif self.position.is_short and close < middle:
+                self.position.close()
+                print(f"🌙 SHORT Reversion EXIT to mean at {close:.2f} (Middle BB {middle:.2f}) 🚀")
+                return
+            return  # No new entry if in position
 
-print("🌙 Moon Dev: Running backtest... 🚀")
+        # No position: Check for entries
+        start_idx = len(self.data) - self.lookback_div - 1
+        if start_idx < 0:
+            return
+
+        # Bullish Divergence Check
+        bullish_div = False
+        lows_slice = self.data.Low[start_idx:-1]
+        if len(lows_slice) > 0:
+            min_idx_rel = np.argmin(lows_slice)
+            prev_low_idx = start_idx + min_idx_rel
+            prev_low_price = self.data.Low[prev_low_idx]
+            prev_rsi = self.rsi[prev_low_idx]
+            if low < prev_low_price and rsi_val > prev_rsi:
+                bullish_div = True
+                print(f"🌙 Bullish DIVERGENCE confirmed: Low {low:.2f} < Prev {prev_low_price:.2f}, RSI {rsi_val:.2f} > {prev_rsi:.2f} ✨")
+
+        # 🌙 New: RSI threshold filter for long
+        rsi_long_ok = rsi_val < self.rsi_long_threshold
+        # 🌙 New: Trend filter for long (uptrend bias)
+        trend_long_ok = close > ema200_val
+
+        # Long Entry - Tightened with RSI and trend filters
+        if (close < lower and bullish_div and volume > self.vol_mult * v_sma and
+            rsi_long_ok and trend_long_ok):
+            entry_price = close
+            sl_price = lower - self.sl_mult * atr_val
+            risk_dist = entry_price - sl_price
+            if risk_dist > 0:
+                size = int(round((self.risk_pct * self.equity) / risk_dist))
+                if size > 0:
+                    self.buy(size=size, sl=sl_price)
+                    self.entry_bar = len(self.data)
+                    self.initial_risk_dist = risk_dist  # 🌙 Track for TP
+                    self.tp_price = entry_price + self.rr_ratio * risk_dist  # 🌙 Set TP at 2:1 RR
+                    print(f"🌙 LONG ENTRY SIGNAL: Price {entry_price:.2f}, Size {size}, SL {sl_price:.2f}, TP {self.tp_price:.2f}, Risk {self.risk_pct*100}% 🚀")
+                    return
+
+        # Bearish Divergence Check
+        bearish_div = False
+        highs_slice = self.data.High[start_idx:-1]
+        if len(highs_slice) > 0:
+            max_idx_rel = np.argmax(highs_slice)
+            prev_high_idx = start_idx + max_idx_rel
+            prev_high_price = self.data.High[prev_high_idx]
+            prev_rsi = self.rsi[prev_high_idx]
+            if high > prev_high_price and rsi_val < prev_rsi:
+                bearish_div = True
+                print(f"🌙 Bearish DIVERGENCE confirmed: High {high:.2f} > Prev {prev_high_price:.2f}, RSI {rsi_val:.2f} < {prev_rsi:.2f} ✨")
+
+        # 🌙 New: RSI threshold filter for short
+        rsi_short_ok = rsi_val > self.rsi_short_threshold
+        # 🌙 New: Trend filter for short (downtrend bias)
+        trend_short_ok = close < ema200_val
+
+        # Short Entry - Tightened with RSI and trend filters
+        if (close > upper and bearish_div and volume > self.vol_mult * v_sma and
+            rsi_short_ok and trend_short_ok):
+            entry_price = close
+            sl_price = upper + self.sl_mult * atr_val
+            risk_dist = sl_price - entry_price
+            if risk_dist > 0:
+                size = int(round((self.risk_pct * self.equity) / risk_dist))
+                if size > 0:
+                    self.sell(size=size, sl=sl_price)
+                    self.entry_bar = len(self.data)
+                    self.initial_risk_dist = risk_dist  # 🌙 Track for TP
+                    self.tp_price = entry_price - self.rr_ratio * risk_dist  # 🌙 Set TP at 2:1 RR
+                    print(f"🌙 SHORT ENTRY SIGNAL: Price {entry_price:.2f}, Size {size}, SL {sl_price:.2f}, TP {self.tp_price:.2f}, Risk {self.risk_pct*100}% 🚀")
+                    return
+
+bt = Backtest(data, DivergentReversion, cash=1000000, commission=0.001, exclusive_orders=True)
 stats = bt.run()
 print(stats)

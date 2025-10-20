@@ -41,6 +41,7 @@ feel free to join our discord if you beleive ai agents will be integrated into t
 - tiktok agent (`tiktok_agent.py`): scrolls tiktok and gets screenshots of the video + comments to extract consumer data in order to feed into algos. sometimes called social arbitrage
 - compliance agent (`compliance_agent.py`): compliance agent to make sure all arbitrage ads are compliant on facebook... tiktok coming soon...
 - research agent (`research_agent`): an agent to fill the ideas.txt so the rbi agent can run forever
+- real time clips agent (`src/agents/realtime_clips_agent.py`): an ai agent that makes real time clips of streamers using obs
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
@@ -72,66 +73,6 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 - Free Algo Trading Roadmap: [moondev.com](https://moondev.com)
 - Algo Trading Education: [algotradecamp.com](https://algotradecamp.com)
 - Business Contact [moon@algotradecamp.com](mailto:moon@algotradecamp.com)
-
-### Shipped Features 📦
-
-- [x] 10/20/25 - grok ai from x now implemented. new version of rbi_agent_v3 that will keep going until the profit target is hit on the backtest.
-- [x] 3/13 - research agent (`research_agent`): an agent to fill the ideas.txt so the rbi agent can run forever
-- [x] 2/27 - compliance agent to make sure all arbitrage ads are compliant on facebook... tiktok coming soon...
-- [x] 2/25- launched tiktok agent thatscrolls tiktok and gets screenshots of the video + comments to extract consumer data in order to feed into algos. sometimes called social arbitrage
-- [x] 2/20 - launched the million agent that has a million token context so you can apply it to other agentic flows. it uses geminis flash 2.0 so that has also been added to the model factory. also built a script that takes any folder of code and outputs to a txt file. thats in the scripts folder. 
-- [x] 2/9 - created a solana agent in order to parse through the new solana launches and the copy bot list and applies filters to them before picking their top picks and opening in my browser
-- [x] 2/8 - created the sniper agent that watches for new solana token launches and will then analyze them and maybe snipe
-- [x] 2/7 - created a phone call agent that can be used for customer support, onboarding or sales with a twilio number
-- [x] 2/6 - added ollama to allow for local deepseek r1, gema and llama 3.2 and any other ollama or hugging face model
-- [x] 2/5 - clips agent to make money completed by clipping my streams into short digestible videos /clips_agent.py and you can see full training here: https://discord.gg/XAw8US9aHT
-- [x] 2/4 - code running agent is complete and put in the agents folder
-- [x] 2/3 - self executing now works, game changer
-- [x] 2/1 - working on getting a self executing ai agent to work with a debugger ai to be able to autonomosly improve my code and trading backtests
-- [x] 1/31 - added o3-mini to the model factory
-- [x] 1/31 - updated the chat agent, this is the agent i will use for all live streams to manage chat with ai
-- [x] 1/30 - created the chat agent to manage the live stream chat
-- [x] 1/30 - groq added & gemini added. new interface for handling the ever growing amount of ai's we have access to. src/models/README.md
-- [x] 1/29 - deepseek hosted locally on lambda labs, see the api script if you want to launch your own src/scripts/deepseek_api.py. how to call it src/scripts/deepseek_local_call.py
-- [x] 1/27 - built a tweet agent and video agent 
-- [x] 1/23 - build an rbi agent that codes backtests based on trading strategy videos, pdfs or words
-- [x] 1/20 - built the funding rate arbitrage trading agent to annnounce when there is a funding rate arbitrage between hyperliquid tokens and spot solana tokens. later we can update this to place the trades
-- [x] 1/17 - built chuck the chart analysis agent that reads in any crypto chart and then analyzes it to get a buy/sell/nothing reccomendation.
-- [x] 1/16 - Built Luna the Liquidation Agent with configurable time windows (15min/1hr/4hr)
-            - Updated Whale Agent to use new OI data format
-            - Fixed Funding Agent to handle new API structure
-            - All agents now using consistent Moon Dev API v2
-- [x] 1/15 - Released comprehensive API access with detailed documentation
-            - Historical liquidation data endpoints
-            - Real-time funding rate monitoring
-            - New Solana token launch tracking
-            - Detailed & combined ETH/BTC open interest historical data
-            - CopyBot data access for reference (follow list & their recent transactions)
-- [x] 1/14 - Added Funding Rate Agent that monitors and announces extreme funding rates
-            - Uses AI to analyze funding opportunities with technical context
-            - Provides voice announcements for significant funding events
-            - Tracks historical funding data for better analysis
-- [x] 1/12 - built a Listing Arbitrage Agent that identifies promising Solana tokens before they reach major exchanges
-            - Uses parallel AI analysis with technical and fundamental agents
-            - Filters by market cap and volume criteria
-            - Saves analysis results and buy recommendations to CSV
-- [x] 1/10 - built a coin gecko agent conversation between 2 ai agents and all of coin geckos data
-- [x] 1/10 - added a focus agent that will take random samples of my voice to ensure im always locked in. my kpi is 200 ai uses per day which is hard when i yap so this is the solution.
-- [x] 1/9 - Added Sentiment Analysis Agent with voice announcements and historical tracking
-            - Monitors Twitter sentiment for major tokens
-            - Tracks sentiment changes over time
-            - Announces significant sentiment shifts
-         - updated the whale agent as well to work better
-- [x] 1/8 - Added minimum balance protection to Risk Agent with configurable AI consultation
-            - Completed CopyBot portfolio analyzer with position sizing
-            - V0 of the whale agent launched
-- [x] 1/7 - CopyBot Agent: Added AI agent to analyze copybot portfolio and decide on whether it should take a position on their account 
-- [x] 1/6 - Market Data API: Added comprehensive API for liquidations, funding rates, open interest, and copybot data
-- [x] 1/5 - created a documentation training video with a full walkthrough of this github (releasing jan 7th)
-- [x] 1/4 - strategy_agent.py: an ai agent that has last say on any strategy placed in strategies folder
-- [x] 1/3 - risk_agent.py: built out an ai agent to manage risk
-- [x] 1/2 - trading_agent.py: built the first trading agent 
-- [x] 1/1 - first lines of code written
 
 ## 🚀 Quick Start Guide
 

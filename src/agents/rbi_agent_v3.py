@@ -113,7 +113,7 @@ TARGET_RETURN = 50  # Target return in % (50 = 50%)
 # Execution Configuration
 CONDA_ENV = "tflow"  # Your conda environment
 MAX_DEBUG_ITERATIONS = 10  # Max times to try debugging before moving to optimization
-MAX_OPTIMIZATION_ITERATIONS = 50  # Max times to KEEP OPTIMIZING until target is hit! 🎯
+MAX_OPTIMIZATION_ITERATIONS = 10  # Max times to KEEP OPTIMIZING until target is hit! 🎯
                                   # Agent runs this many optimization loops trying to achieve TARGET_RETURN
                                   # Higher = more chances to hit target, but takes longer
 EXECUTION_TIMEOUT = 300  # 5 minutes
