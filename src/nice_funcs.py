@@ -248,10 +248,11 @@ def market_buy(token, amount, slippage):
     if not http_client:
         raise ValueError("🚨 RPC_ENDPOINT not found in environment variables!")
 
-    quote = requests.get(f'https://quote-api.jup.ag/v6/quote?inputMint={QUOTE_TOKEN}&outputMint={token}&amount={amount}&slippageBps={SLIPPAGE}').json()
+    # Use Jupiter Lite API (faster and more efficient)
+    quote = requests.get(f'https://lite-api.jup.ag/swap/v1/quote?inputMint={QUOTE_TOKEN}&outputMint={token}&amount={amount}&slippageBps={SLIPPAGE}').json()
     #print(quote)
 
-    txRes = requests.post('https://quote-api.jup.ag/v6/swap',
+    txRes = requests.post('https://lite-api.jup.ag/swap/v1/swap',
                           headers={"Content-Type": "application/json"},
                           data=json.dumps({
                               "quoteResponse": quote,
@@ -292,9 +293,10 @@ def market_sell(QUOTE_TOKEN, amount, slippage):
         raise ValueError("🚨 RPC_ENDPOINT not found in environment variables!")
     print('http client success')
 
-    quote = requests.get(f'https://quote-api.jup.ag/v6/quote?inputMint={QUOTE_TOKEN}&outputMint={token}&amount={amount}&slippageBps={SLIPPAGE}').json()
+    # Use Jupiter Lite API (faster and more efficient)
+    quote = requests.get(f'https://lite-api.jup.ag/swap/v1/quote?inputMint={QUOTE_TOKEN}&outputMint={token}&amount={amount}&slippageBps={SLIPPAGE}').json()
     #print(quote)
-    txRes = requests.post('https://quote-api.jup.ag/v6/swap',
+    txRes = requests.post('https://lite-api.jup.ag/swap/v1/swap',
                           headers={"Content-Type": "application/json"},
                           data=json.dumps({
                               "quoteResponse": quote,
