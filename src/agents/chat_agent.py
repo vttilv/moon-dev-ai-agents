@@ -56,6 +56,7 @@ IGNORED_USERS = ["Nightbot", "StreamElements"]
 POINTS_PER_777 = 0.5  # Points earned per 777 message
 MAX_777_POINTS_PER_DAY = 5.0  # Maximum points from 777s per day
 MAX_777_PER_DAY = int(MAX_777_POINTS_PER_DAY / POINTS_PER_777)  # Auto-calculate max 777s per day
+ONLY_777 = False  # When True, only processes 777 messages; when False, processes all messages normally
 
 
 # Restream configuration
@@ -494,7 +495,7 @@ class ChatAgent:
     def process_question(self, user, question):
         """Process incoming chat messages:
         - If message is '777', respond with random quote/verse from file
-        - Otherwise, just display the message
+        - Otherwise, just display the message (or ignore if ONLY_777 is True)
         """
         try:
             # Check for 777
@@ -504,18 +505,22 @@ class ChatAgent:
                 if daily_count < MAX_777_PER_DAY:
                     self.daily_777_counts[user]['count'] += 1
                     self.save_chat_history(user, question, POINTS_PER_777)
-                
+
                 # Get random quote/verse/parable from our file
                 response = self._get_random_quote_or_verse()
                 emojis = self._get_random_lucky_emojis()
                 return f"777 {emojis}\n{response}"
-            
+
+            # If ONLY_777 is True, ignore all non-777 messages
+            if ONLY_777:
+                return None
+
             # Save all other messages to chat history with score 1
             self.save_chat_history(user, question, 1)
-            
+
             # Just display the message (no AI response)
             return True
-            
+
         except Exception as e:
             cprint(f"❌ Error in process_question: {str(e)}", "red")
             return None

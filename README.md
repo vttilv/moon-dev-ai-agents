@@ -9,7 +9,7 @@ ai agents are clearly the future and the entire workforce will be replaced or at
 
 feel free to join our discord if you beleive ai agents will be integrated into the workforce
 
-⭐️ [first full concise documentation video (watch here)](https://www.youtube.com/watch?v=So_LQVKa55c)
+⭐️ [first full concise documentation video (watch here)](https://youtu.be/RlqzkSgDKDc)
 
 ## Video Updates & Training
 📀 follow all updates here on youtube: https://www.youtube.com/playlist?list=PLXrNVMjRZUJg4M4uz52iGd1LhXXGVbIFz
