@@ -3,6 +3,33 @@
 Handles all LLM-based trading decisions
 """
 
+# ============================================================================
+# AI MODEL CONFIGURATION - EDIT THESE SETTINGS
+# ============================================================================
+
+# AI Model Configuration (via Model Factory)
+# Available types: 'groq', 'openai', 'claude', 'deepseek', 'xai', 'ollama'
+# xAI's Grok is great for trading! Fast reasoning at 2M context window
+AI_MODEL_TYPE = 'xai'  # Change to: groq, openai, claude, deepseek, xai, ollama
+AI_MODEL_NAME = None   # None = use default for model type, or specify model name
+
+# Available xAI models:
+# - 'grok-4-fast-reasoning' (default) - Best value! 2M context, cheap, fast
+# - 'grok-4-0709' - Most intelligent, higher cost
+# - 'grok-3' - Previous generation
+
+# Available Groq models:
+# - 'llama-3.3-70b-versatile' (default) - Fast & powerful
+
+# Available Claude models:
+# - 'claude-3-5-haiku-latest' (default) - Fast
+# - 'claude-3-5-sonnet-latest' - Balanced
+# - 'claude-3-opus-latest' - Most powerful
+
+# ============================================================================
+# END CONFIGURATION
+# ============================================================================
+
 # Keep only these prompts
 TRADING_PROMPT = """
 You are Moon Dev's AI Trading Assistant 🌙
@@ -58,37 +85,75 @@ Remember:
 - Cash must be stored as USDC using USDC_ADDRESS: {USDC_ADDRESS}
 """
 
-import anthropic
 import os
+import sys
 import pandas as pd
 import json
 from termcolor import colored, cprint
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import time
+from pathlib import Path
+
+# Add project root to path for imports
+project_root = str(Path(__file__).parent.parent.parent)
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
 # Local imports
 from src.config import *
 from src import nice_funcs as n
 from src.data.ohlcv_collector import collect_all_tokens
+from src.models.model_factory import model_factory
 
 # Load environment variables
 load_dotenv()
 
 class TradingAgent:
     def __init__(self):
-        self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_KEY"))
+        # Initialize AI model via model factory
+        cprint(f"\n🤖 Initializing Trading Agent with {AI_MODEL_TYPE} model...", "cyan")
+        self.model = model_factory.get_model(AI_MODEL_TYPE, AI_MODEL_NAME)
+
+        if not self.model:
+            cprint(f"❌ Failed to initialize {AI_MODEL_TYPE} model!", "red")
+            cprint("Available models:", "yellow")
+            for model_type in model_factory._models.keys():
+                cprint(f"  - {model_type}", "yellow")
+            sys.exit(1)
+
+        cprint(f"✅ Using model: {self.model.model_name}", "green")
+
         self.recommendations_df = pd.DataFrame(columns=['token', 'action', 'confidence', 'reasoning'])
-        print("🤖 Moon Dev's LLM Trading Agent initialized!")
+        cprint("🤖 Moon Dev's LLM Trading Agent initialized!", "green")
+
+    def chat_with_ai(self, system_prompt, user_content):
+        """Send prompt to AI model via model factory"""
+        try:
+            response = self.model.generate_response(
+                system_prompt=system_prompt,
+                user_content=user_content,
+                temperature=AI_TEMPERATURE,
+                max_tokens=AI_MAX_TOKENS
+            )
+
+            # Handle response format
+            if hasattr(response, 'content'):
+                return response.content
+            return str(response)
+
+        except Exception as e:
+            cprint(f"❌ AI model error: {e}", "red")
+            return None
 
     def analyze_market_data(self, token, market_data):
-        """Analyze market data using Claude"""
+        """Analyze market data using AI model"""
         try:
             # Skip analysis for excluded tokens
             if token in EXCLUDED_TOKENS:
                 print(f"⚠️ Skipping analysis for excluded token: {token}")
                 return None
-            
+
             # Prepare strategy context
             strategy_context = ""
             if 'strategy_signals' in market_data:
@@ -98,28 +163,18 @@ Strategy Signals Available:
                 """
             else:
                 strategy_context = "No strategy signals available."
-            
-            message = self.client.messages.create(
-                model=AI_MODEL,
-                max_tokens=AI_MAX_TOKENS,
-                temperature=AI_TEMPERATURE,
-                messages=[
-                    {
-                        "role": "user", 
-                        "content": f"{TRADING_PROMPT.format(strategy_context=strategy_context)}\n\nMarket Data to Analyze:\n{market_data}"
-                    }
-                ]
+
+            # Call AI model via model factory
+            response = self.chat_with_ai(
+                TRADING_PROMPT.format(strategy_context=strategy_context),
+                f"Market Data to Analyze:\n{market_data}"
             )
-            
-            # Parse the response - handle both string and list responses
-            response = message.content
-            if isinstance(response, list):
-                # Extract text from TextBlock objects if present
-                response = '\n'.join([
-                    item.text if hasattr(item, 'text') else str(item)
-                    for item in response
-                ])
-            
+
+            if not response:
+                cprint(f"❌ No response from AI for {token}", "red")
+                return None
+
+            # Parse the response
             lines = response.split('\n')
             action = lines[0].strip() if lines else "NOTHING"
             
@@ -168,15 +223,9 @@ Strategy Signals Available:
             cprint("\n💰 Calculating optimal portfolio allocation...", "cyan")
             max_position_size = usd_size * (MAX_POSITION_PERCENTAGE / 100)
             cprint(f"🎯 Maximum position size: ${max_position_size:.2f} ({MAX_POSITION_PERCENTAGE}% of ${usd_size:.2f})", "cyan")
-            
-            # Get allocation from AI
-            message = self.client.messages.create(
-                model=AI_MODEL,
-                max_tokens=AI_MAX_TOKENS,
-                temperature=AI_TEMPERATURE,
-                messages=[{
-                    "role": "user", 
-                    "content": f"""You are Moon Dev's Portfolio Allocation AI 🌙
+
+            # Get allocation from AI via model factory
+            allocation_prompt = f"""You are Moon Dev's Portfolio Allocation AI 🌙
 
 Given:
 - Total portfolio size: ${usd_size}
@@ -196,11 +245,15 @@ Example format:
     "token_address": amount_in_usd,
     "{USDC_ADDRESS}": remaining_cash_amount  # Use exact USDC address
 }}"""
-                }]
-            )
-            
+
+            response = self.chat_with_ai("", allocation_prompt)
+
+            if not response:
+                cprint("❌ No response from AI for portfolio allocation", "red")
+                return None
+
             # Parse the response
-            allocations = self.parse_allocation_response(str(message.content))
+            allocations = self.parse_allocation_response(response)
             if not allocations:
                 return None
                 
