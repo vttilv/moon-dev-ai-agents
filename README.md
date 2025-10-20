@@ -112,6 +112,26 @@ python 3.10.9 is what was used during dev
    - Monitor logs for performance
 
 ---
+## ROADMAP
+
+[] hyperliquid perps integration
+   - build a nice funcs router to be able to pass in solana, hyperliquid, extended and then it points to the right nice_funcs -- then we simply change out the imports.
+[] extended integration
+   - same thing as above
+[] hyperliquid spot
+[] trending agent - spots the leaders on hl and trades those w/ data and some llm bias
+[] update the rbi agent. my fav so keep pushing
+
+Other ideas
+
+[] lighter integration
+[] pacifica integration
+[] hibachi integration
+[] aster integration
+[] hyperevm stuff
+
+
+---
 *Built with love by Moon Dev - Pioneering the future of AI-powered trading*
 
 
