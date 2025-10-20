@@ -75,6 +75,7 @@ Project updates will be posted in discord, join here: [moondev.com](http://moond
 
 ### Shipped Features 📦
 
+- [x] 10/20/25 - grok ai from x now implemented. new version of rbi_agent_v3 that will keep going until the profit target is hit on the backtest.
 - [x] 3/13 - research agent (`research_agent`): an agent to fill the ideas.txt so the rbi agent can run forever
 - [x] 2/27 - compliance agent to make sure all arbitrage ads are compliant on facebook... tiktok coming soon...
 - [x] 2/25- launched tiktok agent thatscrolls tiktok and gets screenshots of the video + comments to extract consumer data in order to feed into algos. sometimes called social arbitrage

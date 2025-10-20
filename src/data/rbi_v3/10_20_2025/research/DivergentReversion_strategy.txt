@@ -1,0 +1,34 @@
+STRATEGY_NAME: DivergentReversion
+
+STRATEGY_DETAILS:
+
+### Key Strategy Components
+This is a mean-reversion trading strategy that capitalizes on temporary divergences between two momentum oscillators: the Relative Strength Index (RSI) with a 20-period setting and the Stochastic Oscillator with parameters (8,20), likely referring to a %K period of 8 and a %D smoothing of 20 (or slow stochastic equivalent). The core idea is to identify situations where the RSI signals overbought conditions (above its moving average) while the Stochastic signals oversold conditions (below its moving average), creating a divergence that suggests an impending price pullback toward the mean. The strategy is short-biased, focusing on entering short positions to profit from expected reversions in overextended upward moves. It assumes a ranging or mildly trending market where mean reversion is likely, and incorporates fixed price targets ($10 for potential stop or support, $50 for take-profit or resistance) which may be asset-specific (e.g., for a stock or crypto like Bitcoin in a certain range). No long entries are specified, making it directional for bearish reversion plays.
+
+### Entry/Exit Rules
+- **Entry Rules (Short Only)**:
+  - Monitor for divergence: Enter a short position when RSI(20) closes above its own 20-period simple moving average (SMA) – indicating RSI is in a relatively strong/upward momentum state – while the Stochastic Oscillator(8,20) closes below its own 20-period SMA – indicating Stochastic is in a weak/downward momentum state.
+  - This divergence setup implies the price has likely risen too far (RSI bullish but Stochastic bearish), setting up for mean reversion downward.
+  - Entry should occur on the close of the bar where both conditions align, preferably on a timeframe like 1-hour or daily to filter noise. Volume confirmation (e.g., declining volume on the upmove) could enhance reliability but is not required.
+  - Position size: Not specified, but scale based on account risk (see Risk Management).
+
+- **Exit Rules**:
+  - **Primary Exit (Reversion Signal)**: Close the short position when the divergence reverses, i.e., when RSI(20) drops below its 20-period SMA and/or Stochastic(8,20) rises above its 20-period SMA, signaling convergence and mean reversion completion.
+  - **Fixed Price Targets**: Alternatively, exit if price hits $50 (take-profit level, assuming it's a resistance or overbought threshold) or $10 (stop-loss or support level, to cap downside risk if reversion fails and price breaks lower unexpectedly). These levels act as hard barriers; for example, trail stops toward $50 on favorable moves but exit fully at $10 if breached.
+  - No time-based exits are mentioned, but monitor for 5-10 bars post-entry to avoid prolonged holds if reversion doesn't occur.
+  - Partial exits: Consider scaling out 50% of the position at the reversion signal and the rest at price targets for profit locking.
+
+### Risk Management
+- **Stop-Loss**: Implicitly tied to the $10 price level as a hard stop to prevent excessive losses if the divergence fails and price continues upward. Alternatively, place a dynamic stop above the recent swing high (e.g., 1-2% above entry) or based on ATR (Average True Range, e.g., 2x ATR(14)) for volatility adjustment.
+- **Position Sizing**: Risk no more than 1-2% of total account equity per trade. Calculate position size as: (Account Equity * Risk %) / (Entry Price - Stop-Loss Price). For example, with a $10,000 account and 1% risk, max loss per trade is $100.
+- **Risk-Reward Ratio**: Aim for at least 1:2, where the distance to $50 take-profit is twice the distance to $10 stop. Avoid entries where the setup doesn't meet this.
+- **Overall Filters**: Only trade in sideways markets (e.g., ADX(14) < 25 to confirm low trend strength). Limit to 1-2 open positions to avoid overexposure. Backtest for drawdowns, as mean-reversion strategies can suffer in strong trends. No explicit drawdown limits, but pause trading if account drops 5-10% from peak.
+
+### Required Indicators
+- **RSI(20)**: Relative Strength Index with 20-period lookback, plotted with its 20-period SMA overlay. Available on most platforms like TradingView or MT4.
+- **Stochastic Oscillator(8,20)**: Fast %K=8, %D=20 (or slow stochastic with these params), plotted with its 20-period SMA overlay. Focus on the %K line for signals.
+- **Optional Supporting Indicators**:
+  - SMA(20) on price for context (to confirm if price is above/below mean).
+  - ATR(14) for dynamic stops and position sizing.
+  - ADX(14) to filter for non-trending conditions.
+No custom coding needed; standard indicators suffice. Implement on liquid assets with the specified price range (e.g., stocks or forex pairs scaled to $10-$50 levels).

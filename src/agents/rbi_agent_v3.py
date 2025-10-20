@@ -1,17 +1,37 @@
 """
-🌙 Moon Dev's RBI AI v2.0 (Research-Backtest-Implement-Execute)
+🌙 Moon Dev's RBI AI v3.0 (Research-Backtest-Implement-Execute-OPTIMIZE)
 Built with love by Moon Dev 🚀
 
-NEW IN v2.0: EXECUTION LOOP! 
+🎯 THE PROFIT TARGET HUNTER 🎯
+
+NEW IN v3.0: AUTONOMOUS OPTIMIZATION LOOP!
 - Automatically executes backtests
 - Captures errors and stats
 - Loops back to debug agent on failures
-- Continues until success!
+- ⭐ RUNS CONTINUOUSLY UNTIL PROFIT TARGET IS HIT! ⭐
+- Optimizes entry/exit, indicators, risk management, filters
+- Each iteration improves the strategy to chase your target return
+- Never gives up until TARGET_RETURN % is achieved! 🚀
+
+HOW IT WORKS:
+1. Researches your trading idea
+2. Codes the backtest
+3. Debugs until it executes successfully
+4. Checks the return %
+5. IF return < TARGET_RETURN:
+   → Optimization AI improves the strategy
+   → Executes improved version
+   → Checks new return
+   → Repeats until TARGET_RETURN is hit! 🎯
+6. Saves TARGET_HIT version when goal achieved!
 
 Required Setup:
-1. Same folder structure as v1
-2. Conda environment 'tflow' with backtesting packages
-3. Everything else is automated!
+1. Conda environment 'tflow' with backtesting packages
+2. Set your TARGET_RETURN below (default: 50%)
+3. Run and watch it optimize until profit target is achieved! 🚀💰
+
+IMPORTANT: This agent will keep running optimizations (up to MAX_OPTIMIZATION_ITERATIONS)
+until it achieves your target return. Set realistic targets!
 """
 
 # Import execution functionality
@@ -76,9 +96,26 @@ PACKAGE_CONFIG = {
     "name": "grok-4-fast-reasoning"
 }
 
+OPTIMIZE_CONFIG = {
+    "type": "xai",  # Using Grok 4 Fast Reasoning for optimization
+    "name": "grok-4-fast-reasoning"
+}
+
+# 🎯🎯🎯 PROFIT TARGET CONFIGURATION 🎯🎯🎯
+# ============================================
+# The agent will CONTINUOUSLY OPTIMIZE the strategy until this target is achieved!
+# It will run up to MAX_OPTIMIZATION_ITERATIONS attempting to hit this goal.
+# Set a realistic target based on your market and timeframe!
+# ============================================
+TARGET_RETURN = 50  # Target return in % (50 = 50%)
+# Examples: 10 = 10%, 25 = 25%, 50 = 50%, 100 = 100%
+
 # Execution Configuration
 CONDA_ENV = "tflow"  # Your conda environment
-MAX_DEBUG_ITERATIONS = 10  # Max times to try debugging
+MAX_DEBUG_ITERATIONS = 10  # Max times to try debugging before moving to optimization
+MAX_OPTIMIZATION_ITERATIONS = 50  # Max times to KEEP OPTIMIZING until target is hit! 🎯
+                                  # Agent runs this many optimization loops trying to achieve TARGET_RETURN
+                                  # Higher = more chances to hit target, but takes longer
 EXECUTION_TIMEOUT = 300  # 5 minutes
 
 # DeepSeek Configuration
@@ -87,24 +124,25 @@ DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 # Get today's date for organizing outputs
 TODAY_DATE = datetime.now().strftime("%m_%d_%Y")
 
-# Update data directory paths - V2 uses separate folder structure
+# Update data directory paths - V3 uses separate folder structure
 PROJECT_ROOT = Path(__file__).parent.parent
-DATA_DIR = PROJECT_ROOT / "data/rbi_v2"  # NEW: Separate V2 folder
+DATA_DIR = PROJECT_ROOT / "data/rbi_v3"  # NEW: Separate V3 folder
 TODAY_DIR = DATA_DIR / TODAY_DATE
 RESEARCH_DIR = TODAY_DIR / "research"
 BACKTEST_DIR = TODAY_DIR / "backtests"
 PACKAGE_DIR = TODAY_DIR / "backtests_package"
 FINAL_BACKTEST_DIR = TODAY_DIR / "backtests_final"
+OPTIMIZATION_DIR = TODAY_DIR / "backtests_optimized"  # NEW for V3!
 CHARTS_DIR = TODAY_DIR / "charts"
-EXECUTION_DIR = TODAY_DIR / "execution_results"  # NEW!
+EXECUTION_DIR = TODAY_DIR / "execution_results"
 PROCESSED_IDEAS_LOG = DATA_DIR / "processed_ideas.log"
 
-# IDEAS file is now in the V2 folder 
+# IDEAS file is now in the V3 folder
 IDEAS_FILE = DATA_DIR / "ideas.txt"
 
 # Create main directories if they don't exist
-for dir in [DATA_DIR, TODAY_DIR, RESEARCH_DIR, BACKTEST_DIR, PACKAGE_DIR, 
-            FINAL_BACKTEST_DIR, CHARTS_DIR, EXECUTION_DIR]:
+for dir in [DATA_DIR, TODAY_DIR, RESEARCH_DIR, BACKTEST_DIR, PACKAGE_DIR,
+            FINAL_BACKTEST_DIR, OPTIMIZATION_DIR, CHARTS_DIR, EXECUTION_DIR]:
     dir.mkdir(parents=True, exist_ok=True)
 
 # All prompts (same as v1)
@@ -310,6 +348,78 @@ IMPORTANT: Scan the ENTIRE code for any backtesting.lib usage and replace ALL in
 Return the complete fixed code with proper Moon Dev themed debug prints! 🌙 ✨
 ONLY SEND BACK CODE, NO OTHER TEXT.
 """
+
+OPTIMIZE_PROMPT = """
+You are Moon Dev's Optimization AI 🌙
+Your job is to IMPROVE the strategy to achieve higher returns while maintaining good risk management.
+
+CURRENT PERFORMANCE:
+Return [%]: {current_return}%
+TARGET RETURN: {target_return}%
+
+YOUR MISSION: Optimize this strategy to hit the target return!
+
+OPTIMIZATION TECHNIQUES TO CONSIDER:
+1. **Entry Optimization:**
+   - Tighten entry conditions to catch better setups
+   - Add filters to avoid low-quality signals
+   - Use multiple timeframe confirmation
+   - Add volume/momentum filters
+
+2. **Exit Optimization:**
+   - Improve take profit levels
+   - Add trailing stops
+   - Use dynamic position sizing based on volatility
+   - Scale out of positions
+
+3. **Risk Management:**
+   - Adjust position sizing
+   - Use volatility-based position sizing (ATR)
+   - Add maximum drawdown limits
+   - Improve stop loss placement
+
+4. **Indicator Optimization:**
+   - Fine-tune indicator parameters
+   - Add complementary indicators
+   - Use indicator divergence
+   - Combine multiple timeframes
+
+5. **Market Regime Filters:**
+   - Add trend filters
+   - Avoid choppy/ranging markets
+   - Only trade in favorable conditions
+
+IMPORTANT RULES:
+- DO NOT break the code structure
+- Keep all Moon Dev debug prints
+- Maintain proper backtesting.py format
+- Use self.I() for all indicators
+- Position sizes must be int or fraction (0-1)
+- Focus on REALISTIC improvements (no curve fitting!)
+- Explain your optimization changes in comments
+
+Return the COMPLETE optimized code with Moon Dev themed comments explaining what you improved! 🌙 ✨
+ONLY SEND BACK CODE, NO OTHER TEXT.
+"""
+
+def parse_return_from_output(stdout: str) -> float:
+    """
+    Extract the Return [%] from backtest output
+    Returns the percentage as a float, or None if not found
+    """
+    try:
+        # Look for pattern like "Return [%]                            45.67"
+        match = re.search(r'Return \[%\]\s+([-\d.]+)', stdout)
+        if match:
+            return_pct = float(match.group(1))
+            cprint(f"📊 Extracted return: {return_pct}%", "cyan")
+            return return_pct
+        else:
+            cprint("⚠️ Could not find Return [%] in output", "yellow")
+            return None
+    except Exception as e:
+        cprint(f"❌ Error parsing return: {str(e)}", "red")
+        return None
 
 def execute_backtest(file_path: str, strategy_name: str) -> dict:
     """
@@ -672,13 +782,45 @@ def debug_backtest(backtest_code, error_message, strategy_name="UnknownStrategy"
         return output
     return None
 
+def optimize_strategy(backtest_code, current_return, target_return, strategy_name="UnknownStrategy", iteration=1):
+    """Optimization AI: Improves strategy to hit target return"""
+    cprint(f"\n🎯 Starting Optimization AI (iteration {iteration})...", "cyan")
+    cprint(f"📊 Current Return: {current_return}%", "yellow")
+    cprint(f"🎯 Target Return: {target_return}%", "green")
+    cprint(f"📈 Gap to close: {target_return - current_return}%", "magenta")
+
+    # Create optimization prompt with current performance
+    optimize_prompt_with_stats = OPTIMIZE_PROMPT.format(
+        current_return=current_return,
+        target_return=target_return
+    )
+
+    output = run_with_animation(
+        chat_with_model,
+        "Optimization AI",
+        optimize_prompt_with_stats,
+        f"Optimize this backtest code to hit the target:\n\n{backtest_code}",
+        OPTIMIZE_CONFIG
+    )
+
+    if output:
+        output = clean_model_output(output, "code")
+
+        filepath = OPTIMIZATION_DIR / f"{strategy_name}_OPT_v{iteration}.py"
+        with open(filepath, 'w') as f:
+            f.write(output)
+        cprint(f"🎯 Optimized code saved to {filepath}", "green")
+        return output
+    return None
+
 def process_trading_idea_with_execution(idea: str) -> None:
     """
-    THE NEW PROCESS WITH EXECUTION LOOP! 🚀
-    Research -> Backtest -> Package -> Execute -> Debug (loop) -> Success!
+    THE NEW V3.0 PROCESS WITH OPTIMIZATION LOOP! 🚀🎯
+    Research -> Backtest -> Package -> Execute -> Debug (loop) -> OPTIMIZE (loop) -> Target Hit!
     """
-    print("\n🚀 Moon Dev's RBI AI v2.0 Processing New Idea!")
-    print("🌟 Now with EXECUTION LOOP!")
+    print("\n🚀 Moon Dev's RBI AI v3.0 Processing New Idea!")
+    print("🎯 Now with OPTIMIZATION LOOP!")
+    print(f"🎯 Target Return: {TARGET_RETURN}%")
     print(f"📝 Processing idea: {idea[:100]}...")
     
     # Phase 1: Research
@@ -755,17 +897,132 @@ def process_trading_idea_with_execution(idea: str) -> None:
                     print("🔄 Moving to next idea...")
                     return  # Move to next idea instead of crashing
             else:
-                # SUCCESS! 🎉
+                # SUCCESS! Code executes with trades! 🎉
                 print("\n🎉 BACKTEST EXECUTED SUCCESSFULLY WITH TRADES!")
-                print("📊 Strategy is ready to trade!")
-                
-                # Save final working version
-                final_file = FINAL_BACKTEST_DIR / f"{strategy_name}_BTFinal_WORKING.py"
-                with open(final_file, 'w') as f:
-                    f.write(current_code)
-                
-                print(f"✅ Final working backtest saved to: {final_file}")
-                break
+
+                # Extract the return %
+                current_return = parse_return_from_output(execution_result['stdout'])
+
+                if current_return is None:
+                    print("⚠️ Could not parse return % - saving as working version")
+                    final_file = FINAL_BACKTEST_DIR / f"{strategy_name}_BTFinal_WORKING.py"
+                    with open(final_file, 'w') as f:
+                        f.write(current_code)
+                    print(f"✅ Final working backtest saved to: {final_file}")
+                    break
+
+                # Check if we hit the target!
+                print(f"\n📊 Current Return: {current_return}%")
+                print(f"🎯 Target Return: {TARGET_RETURN}%")
+
+                if current_return >= TARGET_RETURN:
+                    # WE HIT THE TARGET! 🚀🚀🚀
+                    print("\n🚀🚀🚀 TARGET RETURN ACHIEVED! 🚀🚀🚀")
+                    print(f"🎉 Strategy returned {current_return}% (target was {TARGET_RETURN}%)")
+
+                    # Save as TARGET_HIT version
+                    final_file = OPTIMIZATION_DIR / f"{strategy_name}_TARGET_HIT_{current_return}pct.py"
+                    with open(final_file, 'w') as f:
+                        f.write(current_code)
+
+                    print(f"✅ Target-hitting backtest saved to: {final_file}")
+                    break
+                else:
+                    # Need to optimize! 🎯
+                    gap = TARGET_RETURN - current_return
+                    print(f"\n📈 Need to gain {gap}% more to hit target")
+                    print(f"🎯 Starting OPTIMIZATION LOOP...")
+
+                    # Save the working version
+                    working_file = FINAL_BACKTEST_DIR / f"{strategy_name}_BTFinal_WORKING_{current_return}pct.py"
+                    with open(working_file, 'w') as f:
+                        f.write(current_code)
+                    print(f"💾 Saved working version: {working_file}")
+
+                    # 🎯🎯🎯 OPTIMIZATION LOOP! 🎯🎯🎯
+                    # This is the magic of v3.0!
+                    # Agent will keep improving the strategy until TARGET_RETURN is hit
+                    # Each iteration: Optimize → Execute → Check Return → Repeat
+                    optimization_iteration = 0
+                    optimization_code = current_code
+                    best_return = current_return
+                    best_code = current_code
+
+                    while optimization_iteration < MAX_OPTIMIZATION_ITERATIONS:
+                        optimization_iteration += 1
+                        print(f"\n🔄 Optimization attempt {optimization_iteration}/{MAX_OPTIMIZATION_ITERATIONS}")
+
+                        # Optimize the strategy
+                        optimized_code = optimize_strategy(
+                            optimization_code,
+                            best_return,
+                            TARGET_RETURN,
+                            strategy_name,
+                            optimization_iteration
+                        )
+
+                        if not optimized_code:
+                            print("❌ Optimization AI failed to generate code")
+                            break
+
+                        # Save and execute the optimized version
+                        opt_file = OPTIMIZATION_DIR / f"{strategy_name}_OPT_v{optimization_iteration}.py"
+                        opt_result = execute_backtest(opt_file, strategy_name)
+
+                        if not opt_result['success']:
+                            print(f"⚠️ Optimized code failed to execute, trying again...")
+                            continue
+
+                        if has_nan_results(opt_result):
+                            print(f"⚠️ Optimized code has no trades, trying again...")
+                            continue
+
+                        # Parse the new return
+                        new_return = parse_return_from_output(opt_result['stdout'])
+
+                        if new_return is None:
+                            print(f"⚠️ Could not parse return, trying again...")
+                            continue
+
+                        print(f"\n📊 Optimization Result:")
+                        print(f"  Previous: {best_return}%")
+                        print(f"  New:      {new_return}%")
+                        print(f"  Change:   {new_return - best_return:+.2f}%")
+
+                        # Check if we improved
+                        if new_return > best_return:
+                            print(f"✅ IMPROVEMENT! Return increased by {new_return - best_return:.2f}%")
+                            best_return = new_return
+                            best_code = optimized_code
+                            optimization_code = optimized_code  # Use improved version for next iteration
+
+                            # Did we hit the target?
+                            if new_return >= TARGET_RETURN:
+                                print("\n🚀🚀🚀 TARGET RETURN ACHIEVED THROUGH OPTIMIZATION! 🚀🚀🚀")
+                                print(f"🎉 Strategy returned {new_return}% (target was {TARGET_RETURN}%)")
+                                print(f"💪 Took {optimization_iteration} optimization iterations!")
+
+                                # Save as TARGET_HIT version
+                                final_file = OPTIMIZATION_DIR / f"{strategy_name}_TARGET_HIT_{new_return}pct.py"
+                                with open(final_file, 'w') as f:
+                                    f.write(best_code)
+
+                                print(f"✅ Target-hitting backtest saved to: {final_file}")
+                                return  # DONE!
+                        else:
+                            print(f"⚠️ No improvement. Trying different optimization approach...")
+
+                    # Maxed out optimization attempts
+                    print(f"\n⚠️ Reached max optimization iterations ({MAX_OPTIMIZATION_ITERATIONS})")
+                    print(f"📊 Best return achieved: {best_return}% (target was {TARGET_RETURN}%)")
+                    print(f"📈 Gap remaining: {TARGET_RETURN - best_return}%")
+
+                    # Save best version
+                    best_file = OPTIMIZATION_DIR / f"{strategy_name}_BEST_{best_return}pct.py"
+                    with open(best_file, 'w') as f:
+                        f.write(best_code)
+                    print(f"💾 Saved best version: {best_file}")
+                    return  # Move to next idea
             
         else:
             # Extract error and debug
@@ -807,13 +1064,15 @@ def process_trading_idea_with_execution(idea: str) -> None:
 
 def main():
     """Main function - process ideas from file"""
-    cprint(f"\n🌟 Moon Dev's RBI AI v2.0 Starting Up!", "green")
+    cprint(f"\n🌟 Moon Dev's RBI AI v3.0 Starting Up!", "green")
     cprint(f"📅 Today's Date: {TODAY_DATE}", "magenta")
-    cprint(f"🔄 EXECUTION LOOP ENABLED!", "yellow")
+    cprint(f"🎯 OPTIMIZATION LOOP ENABLED!", "yellow")
+    cprint(f"🎯 Target Return: {TARGET_RETURN}%", "green")
     cprint(f"🐍 Using conda env: {CONDA_ENV}", "cyan")
     cprint(f"🔧 Max debug iterations: {MAX_DEBUG_ITERATIONS}", "cyan")
-    
-    cprint(f"\n📂 RBI v2.0 Data Directory: {DATA_DIR}", "magenta")
+    cprint(f"🚀 Max optimization iterations: {MAX_OPTIMIZATION_ITERATIONS}", "cyan")
+
+    cprint(f"\n📂 RBI v3.0 Data Directory: {DATA_DIR}", "magenta")
     cprint(f"📝 Reading ideas from: {IDEAS_FILE}", "magenta")
     
     # Use the ideas file from original RBI directory

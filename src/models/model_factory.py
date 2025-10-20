@@ -17,6 +17,7 @@ from .openai_model import OpenAIModel
 # from .gemini_model import GeminiModel  # Temporarily disabled due to protobuf conflict
 from .deepseek_model import DeepSeekModel
 from .ollama_model import OllamaModel
+from .xai_model import XAIModel
 import random
 
 class ModelFactory:
@@ -29,7 +30,8 @@ class ModelFactory:
         "openai": OpenAIModel,
         # "gemini": GeminiModel,  # Temporarily disabled due to protobuf conflict
         "deepseek": DeepSeekModel,
-        "ollama": OllamaModel  # Add Ollama implementation
+        "ollama": OllamaModel,  # Add Ollama implementation
+        "xai": XAIModel  # xAI Grok models
     }
     
     # Default models for each type
@@ -39,7 +41,8 @@ class ModelFactory:
         "openai": "gpt-4o",                  # Latest GPT-4 Optimized
         # "gemini": "gemini-2.0-flash",        # Latest Gemini model (temporarily disabled)
         "deepseek": "deepseek-reasoner",     # Enhanced reasoning model
-        "ollama": "llama3.2"                 # Meta's Llama 3.2 - balanced performance
+        "ollama": "llama3.2",                # Meta's Llama 3.2 - balanced performance
+        "xai": "grok-4-fast-reasoning"       # xAI's Grok 4 Fast with reasoning (best value: 2M context, cheap!)
     }
     
     def __init__(self):
@@ -64,7 +67,7 @@ class ModelFactory:
         
         # Debug current environment without exposing values
         cprint("\n🔍 Environment Check:", "cyan")
-        for key in ["GROQ_API_KEY", "OPENAI_KEY", "ANTHROPIC_KEY", "DEEPSEEK_KEY"]:  # GEMINI_KEY temporarily removed
+        for key in ["GROQ_API_KEY", "OPENAI_KEY", "ANTHROPIC_KEY", "DEEPSEEK_KEY", "GROK_API_KEY"]:  # GEMINI_KEY temporarily removed
             value = os.getenv(key)
             if value and len(value.strip()) > 0:
                 cprint(f"  ├─ {key}: Found ({len(value)} chars)", "green")
@@ -210,6 +213,7 @@ class ModelFactory:
             "openai": "OPENAI_KEY",
             # "gemini": "GEMINI_KEY",  # Temporarily disabled due to protobuf conflict
             "deepseek": "DEEPSEEK_KEY",
+            "xai": "GROK_API_KEY",  # Grok/xAI uses GROK_API_KEY
             # Ollama doesn't need an API key as it runs locally
         }
     
