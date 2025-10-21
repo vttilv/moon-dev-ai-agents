@@ -8,7 +8,7 @@ This module provides integration with locally running Ollama models.
 import requests
 import json
 from termcolor import cprint
-from .base_model import BaseModel
+from .base_model import BaseModel, ModelResponse
 
 class OllamaModel(BaseModel):
     """Implementation for local Ollama models"""
@@ -76,14 +76,16 @@ class OllamaModel(BaseModel):
         except:
             return False
     
-    def generate_response(self, system_prompt, user_content, temperature=0.7):
+    def generate_response(self, system_prompt, user_content, temperature=0.7, max_tokens=None, **kwargs):
         """Generate a response using the Ollama model
-        
+
         Args:
             system_prompt: System prompt to guide the model
             user_content: User's input content
             temperature: Controls randomness (0.0 to 1.0)
-            
+            max_tokens: Maximum tokens to generate (ignored by Ollama, kept for compatibility)
+            **kwargs: Additional arguments (ignored, kept for compatibility)
+
         Returns:
             Generated response text or None if failed
         """
@@ -111,16 +113,23 @@ class OllamaModel(BaseModel):
             )
             
             if response.status_code == 200:
-                content = response.json().get("message", {}).get("content", "")
-                return content
+                response_data = response.json()
+                content = response_data.get("message", {}).get("content", "")
+
+                return ModelResponse(
+                    content=content,
+                    raw_response=response_data,
+                    model_name=self.model_name,
+                    usage=None  # Ollama doesn't provide token usage info
+                )
             else:
                 cprint(f"❌ Ollama API error: {response.status_code}", "red")
                 cprint(f"Response: {response.text}", "red")
-                return None
-                
+                raise Exception(f"Ollama API error: {response.status_code}")
+
         except Exception as e:
             cprint(f"❌ Error generating response: {str(e)}", "red")
-            return None
+            raise
     
     def __str__(self):
         return f"OllamaModel(model={self.model_name})"

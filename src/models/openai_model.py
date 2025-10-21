@@ -154,7 +154,6 @@ class OpenAIModel(BaseModel):
                     if max_output_tokens is None:
                         max_output_tokens = 2048  # sensible default for RBI tasks
 
-                    cprint("🛤️ OpenAI Responses API path (gpt-5/o1)", "cyan")
                     response = self.client.responses.create(
                         model=self.model_name,
                         input=content_str,
@@ -187,7 +186,7 @@ class OpenAIModel(BaseModel):
                             usage=getattr(response, 'usage', None)
                         )
                 except AttributeError:
-                    cprint("⚠️ Responses API not available on client; attempting direct HTTP to Responses API", "yellow")
+                    # Responses API not available, fall back to direct HTTP
                     try:
                         content_str = f"Instructions: {system_prompt}\n\nInput: {user_content}"
                         max_output_tokens = kwargs.get('max_tokens') or kwargs.get('max_completion_tokens') or 2048
@@ -268,7 +267,6 @@ class OpenAIModel(BaseModel):
             model_kwargs = self._prepare_model_kwargs(**kwargs)
             
             # Create completion with appropriate parameters
-            cprint("🛤️ OpenAI Chat Completions path", "cyan")
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,

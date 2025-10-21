@@ -43,6 +43,7 @@ feel free to join [our discord](https://discord.gg/8UPuVZ53bh) if you beleive ai
 - research agent (`research_agent`): an agent to fill the ideas.txt so the rbi agent can run forever
 - real time clips agent (`src/agents/realtime_clips_agent.py`): an ai agent that makes real time clips of streamers using obs
 - housecoin agent (`src/agents/housecoin_agent.py`): DCA (dollar cost average) agent with AI confirmation layer using Grok-4 for the thesis: 1 House = 1 Housecoin 🏠
+- swarm agent (`src/agents/swarm_agent.py`): queries 6 AI models in parallel (Claude 4.5, GPT-5, Gemini 2.5, Grok-4, DeepSeek, DeepSeek-R1 local), generates AI consensus summary, returns clean JSON with model mapping for easy parsing 🐝
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
@@ -133,6 +134,14 @@ python 3.10.9 is what was used during dev
    - Spots leaders on HyperLiquid and trades with data + LLM analysis
 - [ ] **RBI Agent Updates**
    - Continued improvements to research-based inference agent
+- [ ] **postion sizing agent**
+   - looks at volume and liquidations to determine position sizing
+- [ ] **regime agents**
+   - constantly determining the trading regime we are in and running strategies for that regime
+- [ ] **execution agents**
+   - when a signal is triggered ask a swarm of agents if we should abide..
+- [ ] **polymarket sweeper agent**
+   - watches our polymarket sweeper dashboard and follows some sweepers
 
 ### Future Ideas
 - [ ] **Lighter Integration**
