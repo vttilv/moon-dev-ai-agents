@@ -1,19 +1,19 @@
-# 🏠 HouseCoin DCA Agent
+# 🏠 Housecoin DCA Agent
 
-AI-powered Dollar Cost Averaging agent for HouseCoin with Grok-4 confirmation layer.
+AI-powered Dollar Cost Averaging agent for Housecoin with Grok-4 confirmation layer.
 
 ## ⚠️ WARNING ⚠️
-**NOT FINANCIAL ADVICE** - This is an experimental DCA bot. HouseCoin may go to zero. Trade at your own risk. This agent will buy and eventually sell. Past performance does not guarantee future results.
+**NOT FINANCIAL ADVICE** - This is an experimental DCA bot. Housecoin may go to zero. Trade at your own risk. This agent will buy and eventually sell. Past performance does not guarantee future results.
 
-## The Thesis: 1 House = 1 HouseCoin 🏠
+## The Thesis: 1 House = 1 Housecoin 🏠
 
 Key beliefs driving this strategy:
-- Every real estate agent will eventually need HouseCoin
-- Anyone with a house needs to hedge with HouseCoin
-- Real estate bubble makes homes unaffordable, but HouseCoin IS affordable
-- 2.3 billion homes vs 1 billion HouseCoin = supply shock
+- Every real estate agent will eventually need Housecoin
+- Anyone with a house needs to hedge with Housecoin
+- Real estate bubble makes homes unaffordable, but Housecoin IS affordable
+- 2.3 billion homes vs 1 billion Housecoin = supply shock
 - Real estate: $300+ trillion market opportunity
-- Eventually all real estate → blockchain, HouseCoin best positioned
+- Eventually all real estate → blockchain, Housecoin best positioned
 
 ## How It Works
 
@@ -33,7 +33,7 @@ Key beliefs driving this strategy:
 
 ```bash
 # Set in config.py
-EXCHANGE = 'solana'  # HouseCoin is on Solana
+EXCHANGE = 'solana'  # Housecoin is on Solana
 
 # Run the agent
 python src/agents/housecoin_agent.py
@@ -97,10 +97,10 @@ The agent maintains state in `housecoin_agent_state.json`:
 ## Sample Output
 
 ```
-🏠 HouseCoin DCA Agent with AI Decisions 🏠
+🏠 Housecoin DCA Agent with AI Decisions 🏠
 ============================================================
 ⚠️ NOT FINANCIAL ADVICE - This may go to zero!
-Thesis: 1 House = 1 HouseCoin
+Thesis: 1 House = 1 Housecoin
 Exit Target: $1.68
 
 [09:43:02] $0.00489151
@@ -111,11 +111,11 @@ Exit Target: $1.68
 🤖 Consulting AI for trade confirmation...
 ✅ AI APPROVED: BUY
 
-🚀 Buying ~408 HouseCoin for $2
+🚀 Buying ~408 Housecoin for $2
 ✅ Buy successful! TX: 35uaUgYBy2F58PP4...
 
 🏠 HOUSECOIN THESIS:
-1 House = 1 HouseCoin
+1 House = 1 Housecoin
 ```
 
 ## Dependencies
@@ -127,11 +127,11 @@ Exit Target: $1.68
 
 ## Important Notes
 
-- HouseCoin contract: `DitHyRMQiSDhn5cnKMJV2CDDt6sVct96YrECiM49pump`
+- Housecoin contract: `DitHyRMQiSDhn5cnKMJV2CDDt6sVct96YrECiM49pump`
 - Only runs on Solana (not HyperLiquid)
 - Requires USDC for purchases
 - All transactions on-chain and verifiable
 
 ---
 
-🌙 *Built with love by Moon Dev - Remember: 1 House = 1 HouseCoin!*
+🌙 *Built with love by Moon Dev - Remember: 1 House = 1 Housecoin!*

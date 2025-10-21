@@ -45,7 +45,7 @@ from src.models.model_factory import model_factory
 load_dotenv()
 
 # ============== AI DECISION PROMPT ==============
-AI_DECISION_PROMPT = """You are an AI trading assistant evaluating a HouseCoin DCA (Dollar Cost Average) buy signal.
+AI_DECISION_PROMPT = """You are an AI trading assistant evaluating a Housecoin DCA (Dollar Cost Average) buy signal.
 
 Our strategy has triggered a buy signal because the price has separated sufficiently from the moving averages,
 indicating a solid entry point for dollar cost averaging.
@@ -71,7 +71,7 @@ Then provide a brief explanation of your decision (1-2 sentences).
 """
 
 # ============== STRATEGY CONSTANTS ==============
-# HouseCoin contract address (Solana)
+# Housecoin contract address (Solana)
 HOUSECOIN_ADDRESS = "DitHyRMQiSDhn5cnKMJV2CDDt6sVct96YrECiM49pump"
 USDC_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 
@@ -108,19 +108,19 @@ STATE_FILE = "housecoin_agent_state.json"
 
 # ============== HOUSECOIN THESIS ==============
 THESIS_STATEMENTS = [
-    "Every single real estate agent in the world will eventually have to own HouseCoin",
-    "Anyone who owns a house needs to hedge their home with HouseCoin",
-    "Houses are in a huge bubble. No one can afford real estate, but they CAN afford HouseCoin",
-    "1 House = 1 HouseCoin - It's that simple",
-    "Eventually all real estate will be on blockchain. HouseCoin is best positioned",
-    "2.3 billion homes in the world but only 1 billion HouseCoin - supply shock incoming",
-    "Real estate is a $300+ trillion market. HouseCoin captures this digitally",
+    "Every single real estate agent in the world will eventually have to own Housecoin",
+    "Anyone who owns a house needs to hedge their home with Housecoin",
+    "Houses are in a huge bubble. No one can afford real estate, but they CAN afford Housecoin",
+    "1 House = 1 Housecoin - It's that simple",
+    "Eventually all real estate will be on blockchain. Housecoin is best positioned",
+    "2.3 billion homes in the world but only 1 billion Housecoin - supply shock incoming",
+    "Real estate is a $300+ trillion market. Housecoin captures this digitally",
 ]
 
-class HouseCoinAgent:
+class HousecoinAgent:
     def __init__(self):
-        """Initialize the HouseCoin DCA Agent"""
-        cprint("\n🏠 Initializing HouseCoin DCA Agent with AI Decision Layer 🏠", "cyan", attrs=['bold'])
+        """Initialize the Housecoin DCA Agent"""
+        cprint("\n🏠 Initializing Housecoin DCA Agent with AI Decision Layer 🏠", "cyan", attrs=['bold'])
 
         # Initialize AI model
         cprint(f"🤖 Loading {AI_MODEL_TYPE} model: {AI_MODEL_NAME}", "yellow")
@@ -142,7 +142,7 @@ class HouseCoinAgent:
         if not self.birdeye_api_key:
             cprint("⚠️ Warning: BIRDEYE_API_KEY not found", "yellow")
 
-        cprint("✅ HouseCoin Agent initialized!", "green")
+        cprint("✅ Housecoin Agent initialized!", "green")
         cprint("⚠️ NOT FINANCIAL ADVICE - Trade at your own risk!", "yellow", attrs=['bold'])
 
     def load_state(self):
@@ -410,7 +410,7 @@ class HouseCoinAgent:
     def execute_buy(self, amount, reason):
         """Execute a market buy after AI confirmation"""
         try:
-            cprint(f"\n💰 Executing buy for ${amount} worth of HouseCoin", "green", attrs=['bold'])
+            cprint(f"\n💰 Executing buy for ${amount} worth of Housecoin", "green", attrs=['bold'])
 
             # Execute buy using nice_funcs with slippage
             tx_id = n.market_buy(HOUSECOIN_ADDRESS, amount, SLIPPAGE)
@@ -443,10 +443,10 @@ class HouseCoinAgent:
     def run(self):
         """Main agent loop"""
         print("\n" + "="*60)
-        cprint("🏠 HouseCoin DCA Agent with AI Decisions 🏠", "cyan", attrs=['bold'])
+        cprint("🏠 Housecoin DCA Agent with AI Decisions 🏠", "cyan", attrs=['bold'])
         print("="*60)
         cprint("⚠️ NOT FINANCIAL ADVICE - This may go to zero!", "yellow", attrs=['bold'])
-        cprint(f"Thesis: 1 House = 1 HouseCoin", "magenta")
+        cprint(f"Thesis: 1 House = 1 Housecoin", "magenta")
         cprint(f"Exit Target: ${EXIT_PRICE}", "yellow")
         cprint(f"Trading Hours: {TRADING_START_HOUR}AM-{TRADING_END_HOUR-12}PM ET", "cyan")
         cprint(f"AI Model: {AI_MODEL_TYPE} - {AI_MODEL_NAME}", "green")
@@ -566,7 +566,7 @@ class HouseCoinAgent:
                     if ai_approved:
                         # Execute the buy
                         estimated_housecoin = int(buy_amount / current_price)
-                        cprint(f"\n🚀 Buying ~{estimated_housecoin:,} HouseCoin for ${buy_amount}", "green", attrs=['bold'])
+                        cprint(f"\n🚀 Buying ~{estimated_housecoin:,} Housecoin for ${buy_amount}", "green", attrs=['bold'])
 
                         if self.execute_buy(buy_amount, buy_reason):
                             # Show a random thesis after successful buy
@@ -585,7 +585,7 @@ class HouseCoinAgent:
                     time.sleep(ABOVE_SMA_CHECK_MINUTES * 60)  # Check every X minutes when above SMA
 
             except KeyboardInterrupt:
-                cprint("\n\n👋 Shutting down HouseCoin Agent...", "yellow")
+                cprint("\n\n👋 Shutting down Housecoin Agent...", "yellow")
                 cprint(f"Total invested: ${self.state['total_bought']}", "green")
                 cprint(f"Total buys: {len(self.state['buy_history'])}", "cyan")
                 break
@@ -595,16 +595,16 @@ class HouseCoinAgent:
                 time.sleep(60)
 
 def main():
-    """Run the HouseCoin DCA Agent"""
+    """Run the Housecoin DCA Agent"""
     try:
         # Check if we're on Solana
         if EXCHANGE != 'solana':
-            cprint("⚠️ Warning: HouseCoin is currently only on Solana", "yellow")
+            cprint("⚠️ Warning: Housecoin is currently only on Solana", "yellow")
             cprint(f"Current exchange: {EXCHANGE}", "yellow")
-            cprint("Switching to Solana mode for HouseCoin...", "cyan")
+            cprint("Switching to Solana mode for Housecoin...", "cyan")
 
         # Initialize and run the agent
-        agent = HouseCoinAgent()
+        agent = HousecoinAgent()
         agent.run()
 
     except Exception as e:
