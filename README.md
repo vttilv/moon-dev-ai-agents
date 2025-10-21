@@ -116,6 +116,7 @@ python 3.10.9 is what was used during dev
 
 [] hyperliquid perps integration
    - build a nice funcs router to be able to pass in solana, hyperliquid, extended and then it points to the right nice_funcs -- then we simply change out the imports.
+[] polymarket integration
 [] extended integration
    - same thing as above
 [] hyperliquid spot

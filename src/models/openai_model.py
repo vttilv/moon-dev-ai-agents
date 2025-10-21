@@ -13,9 +13,21 @@ class OpenAIModel(BaseModel):
     
     AVAILABLE_MODELS = {
         "gpt-5": {
-            "description": "Next-generation GPT model with advanced capabilities",
-            "input_price": "N/A",
-            "output_price": "N/A",
+            "description": "Most advanced GPT-5 model with breakthrough capabilities",
+            "input_price": "$0.015/1K tokens",
+            "output_price": "$0.045/1K tokens",
+            "supports_reasoning_effort": False
+        },
+        "gpt-5-mini": {
+            "description": "Efficient GPT-5 mini model with strong performance",
+            "input_price": "$0.007/1K tokens",
+            "output_price": "$0.021/1K tokens",
+            "supports_reasoning_effort": False
+        },
+        "gpt-5-nano": {
+            "description": "Ultra-fast GPT-5 nano model for high-speed tasks",
+            "input_price": "$0.003/1K tokens",
+            "output_price": "$0.009/1K tokens",
             "supports_reasoning_effort": False
         },
         "o3": {
