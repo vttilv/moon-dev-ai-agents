@@ -6,7 +6,7 @@ Step-by-step guide to get your Moon Dev agents trading on HyperLiquid.
 
 1. **Python Environment**: Make sure you're in the `tflow` conda environment
 2. **Dependencies**: The HyperLiquid SDK should already be installed
-3. **Funds**: You'll need USDC on Arbitrum to deposit to HyperLiquid
+3. **Funds**: You'll need USDC on Arbitrum to deposit to HyperLiquid.
 
 ## Step 1: Get Your HyperLiquid Private Key
 

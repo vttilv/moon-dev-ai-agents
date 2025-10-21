@@ -11,7 +11,7 @@ HYPER_LIQUID_KEY=your_ethereum_private_key_here
 
 ⚠️ **Important**: This is an Ethereum-style private key (64 hex characters), NOT a Solana key.
 
-### 2. Switch to HyperLiquid in Config
+### 2. Switch to HyperLiquid in Config.
 
 Edit `src/config.py`:
 ```python

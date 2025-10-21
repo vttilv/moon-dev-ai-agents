@@ -3,7 +3,7 @@
 AI-powered Dollar Cost Averaging agent for Housecoin with Grok-4 confirmation layer.
 
 ## ⚠️ WARNING ⚠️
-**NOT FINANCIAL ADVICE** - This is an experimental DCA bot. Housecoin may go to zero. Trade at your own risk. This agent will buy and eventually sell. Past performance does not guarantee future results.
+**NOT FINANCIAL ADVICE** - This is an experimental DCA bot. Housecoin may go to zero. Trade at your own risk. This agent will buy and eventually sell. Past performance does not guarantee future results
 
 ## The Thesis: 1 House = 1 Housecoin 🏠
 
