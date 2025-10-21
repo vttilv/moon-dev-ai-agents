@@ -39,7 +39,7 @@ feel free to join [our discord](https://discord.gg/8UPuVZ53bh) if you beleive ai
 - solana agent (`solana_agent.py`): looks at the sniper agent and the tx agent in order to select which memes may be interesting
 - million agent (`million_agent.py`): uses million context window from gemini to pull in a knowledge base
 - tiktok agent (`tiktok_agent.py`): scrolls tiktok and gets screenshots of the video + comments to extract consumer data in order to feed into algos. sometimes called social arbitrage
-- compliance agent (`compliance_agent.py`): compliance agent to make sure all arbitrage ads are compliant on facebook... tiktok coming soon...
+- compliance agent (`compliance_agent.py`): analyzes TikTok ads for Facebook advertising compliance, extracting frames and transcribing audio to check against FB guidelines
 - research agent (`research_agent`): an agent to fill the ideas.txt so the rbi agent can run forever
 - real time clips agent (`src/agents/realtime_clips_agent.py`): an ai agent that makes real time clips of streamers using obs
 - housecoin agent (`src/agents/housecoin_agent.py`): DCA (dollar cost average) agent with AI confirmation layer using Grok-4 for the thesis: 1 House = 1 Housecoin 🏠
