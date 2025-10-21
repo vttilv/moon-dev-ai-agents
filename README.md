@@ -7,7 +7,7 @@
 ## 🎯 Vision
 ai agents are clearly the future and the entire workforce will be replaced or atleast using ai agents. while i am a quant and building agents for algo trading i will be contributing to all different types of ai agent flows and placing all of the agents here for free, 100% open sourced because i beleive code is the great equalizer and we have never seen a regime shift like this so i need to get this code to the people
 
-feel free to join our discord if you beleive ai agents will be integrated into the workforce
+feel free to join [our discord](https://discord.gg/8UPuVZ53bh) if you beleive ai agents will be integrated into the workforce
 
 ⭐️ [first full concise documentation video (watch here)](https://youtu.be/RlqzkSgDKDc)
 
@@ -68,7 +68,7 @@ feel free to join our discord if you beleive ai agents will be integrated into t
 8. Past performance does not indicate future results
 
 ## 👂 Looking for Updates?
-Project updates will be posted in discord, join here: [moondev.com](http://moondev.com) 
+Project updates will be posted in Discord, join here: [discord.gg/8UPuVZ53bh](https://discord.gg/8UPuVZ53bh) 
 
 ## 🔗 Links
 - Free Algo Trading Roadmap: [moondev.com](https://moondev.com)
