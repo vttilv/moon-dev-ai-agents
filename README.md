@@ -123,6 +123,8 @@ python 3.10.9 is what was used during dev
 ### Coming Soon
 - [ ] **Polymarket Integration**
    - Prediction market trading capabilities
+- [ ] **Base Chain Integration**
+   - Support for Base L2 network trading
 - [ ] **Extended Integration**
    - Additional exchange support using same ExchangeManager pattern
 - [ ] **HyperLiquid Spot Trading**
