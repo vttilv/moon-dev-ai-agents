@@ -42,6 +42,7 @@ feel free to join our discord if you beleive ai agents will be integrated into t
 - compliance agent (`compliance_agent.py`): compliance agent to make sure all arbitrage ads are compliant on facebook... tiktok coming soon...
 - research agent (`research_agent`): an agent to fill the ideas.txt so the rbi agent can run forever
 - real time clips agent (`src/agents/realtime_clips_agent.py`): an ai agent that makes real time clips of streamers using obs
+- housecoin agent (`src/agents/housecoin_agent.py`): DCA (dollar cost average) agent with AI confirmation layer using Grok-4 for the thesis: 1 House = 1 Housecoin 🏠
 
 **⚠️ IMPORTANT: This is an experimental project. There are NO guarantees of profitability. Trading involves substantial risk of loss.**
 
@@ -112,24 +113,31 @@ python 3.10.9 is what was used during dev
    - Monitor logs for performance
 
 ---
-## ROADMAP
+## 🗺️ ROADMAP
 
-[] hyperliquid perps integration
-   - build a nice funcs router to be able to pass in solana, hyperliquid, extended and then it points to the right nice_funcs -- then we simply change out the imports.
-[] polymarket integration
-[] extended integration
-   - same thing as above
-[] hyperliquid spot
-[] trending agent - spots the leaders on hl and trades those w/ data and some llm bias
-[] update the rbi agent. my fav so keep pushing
+### In Progress
+- [x] **HyperLiquid Perps Integration** ✅
+   - Built ExchangeManager for seamless switching between Solana and HyperLiquid
+   - No router needed - using explicit imports via `nice_funcs_hyperliquid.py`
 
-Other ideas
+### Coming Soon
+- [ ] **Polymarket Integration**
+   - Prediction market trading capabilities
+- [ ] **Extended Integration**
+   - Additional exchange support using same ExchangeManager pattern
+- [ ] **HyperLiquid Spot Trading**
+   - Spot market support on HyperLiquid
+- [ ] **Trending Agent**
+   - Spots leaders on HyperLiquid and trades with data + LLM analysis
+- [ ] **RBI Agent Updates**
+   - Continued improvements to research-based inference agent
 
-[] lighter integration
-[] pacifica integration
-[] hibachi integration
-[] aster integration
-[] hyperevm stuff
+### Future Ideas
+- [ ] **Lighter Integration**
+- [ ] **Pacifica Integration**
+- [ ] **Hibachi Integration**
+- [ ] **Aster Integration**
+- [ ] **HyperEVM Support**
 
 
 ---
