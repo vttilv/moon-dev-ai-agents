@@ -104,7 +104,7 @@ AI_TEMPERATURE = 0.3  # Lower temperature for more consistent decisions
 AI_MAX_TOKENS = 150  # Short responses for buy/don't buy decisions
 
 # State file for tracking buys
-STATE_FILE = "housecoin_agent_state.json"
+STATE_FILE = os.path.join(project_root, "src", "data", "housecoin_agent", "housecoin_agent_state.json")
 
 # ============== HOUSECOIN THESIS ==============
 THESIS_STATEMENTS = [
