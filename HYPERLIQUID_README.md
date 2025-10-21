@@ -112,7 +112,7 @@ python src/agents/example_unified_agent.py
 
 ## Full Documentation
 
-- 📖 **Setup Guide**: [docs/HYPERLIQUID_SETUP.md](docs/HYPERLIQUID_SETUP.md)
+- 📖 **Setup Guide**: [docs/hyperliquid_setup.md](docs/hyperliquid_setup.md)
 - 🔄 **Migration Guide**: [docs/hyperliquid_migration.md](docs/hyperliquid_migration.md)
 - 📊 **Exchange Manager**: [docs/exchange_manager_migration.md](docs/exchange_manager_migration.md)
 
