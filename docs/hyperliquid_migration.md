@@ -1,139 +1,251 @@
-# HyperLiquid Migration Guide
+# 🚀 HyperLiquid Integration Guide
 
-How to add HyperLiquid to existing agents.
+How to use HyperLiquid for perpetual futures trading alongside Solana spot trading.
 
 ## Quick Start
 
-### 1. Add to .env
-```
+### 1. Add HyperLiquid Key to .env
+```bash
 HYPER_LIQUID_KEY=your_ethereum_private_key_here
 ```
 
-### 2. Update Your Agent
+⚠️ **Important**: This is an Ethereum-style private key (64 hex characters), NOT a Solana key.
 
-**BEFORE (Solana only):**
+### 2. Switch to HyperLiquid in Config
+
+Edit `src/config.py`:
 ```python
-from nice_funcs import market_buy, market_sell, get_position
+# 🔄 Exchange Selection
+EXCHANGE = 'hyperliquid'  # Switch from 'solana' to 'hyperliquid'
 
-# Trade
-market_buy(token_address, 100)
-position = get_position(token_address)
+# Configure which symbols to trade
+HYPERLIQUID_SYMBOLS = ['BTC', 'ETH', 'SOL']  # Add more as needed
+HYPERLIQUID_LEVERAGE = 5  # 1-50x leverage
 ```
 
-**AFTER (HyperLiquid option):**
+### 3. Your Agents Automatically Work!
+
+No code changes needed in most agents! The ExchangeManager handles everything:
+
 ```python
-# Import both
-from nice_funcs import market_buy as solana_buy
+# Your existing agent code still works:
+from src.exchange_manager import ExchangeManager
+
+em = ExchangeManager()  # Automatically uses config.EXCHANGE
+em.market_buy('BTC', 100)  # Works with HyperLiquid!
+em.get_position('BTC')  # Returns normalized position data
+```
+
+## Using the Exchange Manager
+
+### Basic Usage (Works for Both Exchanges!)
+
+```python
+from src.exchange_manager import ExchangeManager
+from src.config import get_active_tokens
+
+# Initialize (automatically uses config.EXCHANGE)
+em = ExchangeManager()
+
+# Get appropriate token list
+tokens = get_active_tokens()
+# Returns ['BTC', 'ETH', 'SOL'] for HyperLiquid
+# Returns contract addresses for Solana
+
+# These functions work identically on both exchanges:
+for token in tokens:
+    # Get price
+    price = em.get_current_price(token)
+
+    # Check position
+    position = em.get_position(token)
+    if position['has_position']:
+        print(f"Size: {position['size']}")
+        print(f"PnL: {position['pnl_percent']}%")
+
+    # Execute trades
+    em.market_buy(token, 100)  # Buy $100 worth
+    em.chunk_kill(token)  # Close position
+```
+
+### HyperLiquid-Specific Features
+
+```python
+# Set leverage (HyperLiquid only)
+em.set_leverage('BTC', 10)  # 10x leverage
+
+# Get account value
+value = em.get_account_value()  # Total portfolio value
+
+# Get available balance
+balance = em.get_balance()  # Free balance for trading
+```
+
+## Key Differences
+
+| Feature | Solana | HyperLiquid |
+|---------|--------|-------------|
+| **Asset Type** | Spot tokens | Perpetual futures |
+| **Identifiers** | Contract addresses | Symbol strings ('BTC', 'ETH') |
+| **Leverage** | No | Yes (1-50x) |
+| **Fees** | Higher | Lower |
+| **Liquidity** | Varies by token | Excellent for majors |
+| **Best For** | Memecoins, new launches | BTC, ETH, SOL trading |
+
+## Migrating Your Agents
+
+### Option 1: No Changes Needed! (Recommended)
+
+If your agent already uses nice_funcs, just switch to ExchangeManager:
+
+**Before:**
+```python
+from src import nice_funcs as n
+
+n.market_buy(token, 100)
+n.get_position(token)
+n.chunk_kill(token, max_size, slippage)
+```
+
+**After:**
+```python
+from src.exchange_manager import ExchangeManager
+
+em = ExchangeManager()
+em.market_buy(token, 100)  # Works for both!
+em.get_position(token)  # Normalized format
+em.chunk_kill(token)  # Auto-handles params
+```
+
+### Option 2: Direct HyperLiquid Usage
+
+For HyperLiquid-specific features:
+
+```python
 import nice_funcs_hyperliquid as hl
 import eth_account
 
-# Choose exchange based on config
-EXCHANGE = 'hyperliquid'  # or 'solana'
+account = eth_account.Account.from_key(os.getenv('HYPER_LIQUID_KEY'))
 
-if EXCHANGE == 'hyperliquid':
-    account = eth_account.Account.from_key(os.getenv('HYPER_LIQUID_KEY'))
-    hl.market_buy('BTC', 100, account)
-    position = hl.get_position('BTC', account)
-else:
-    solana_buy(token_address, 100)
-    position = get_position(token_address)
+# HyperLiquid specific functions
+hl.set_leverage('BTC', 10, account)
+hl.limit_order('BTC', True, 0.001, 95000, False, account)
+hl.pnl_close('BTC', target=5, max_loss=-2, account)
 ```
 
-## Function Mapping
+## Testing Your Setup
 
-| Operation | Solana | HyperLiquid |
-|-----------|--------|-------------|
-| Buy | `market_buy(token, usd)` | `hl.market_buy(symbol, usd, account)` |
-| Sell | `market_sell(token, percent)` | `hl.market_sell(symbol, usd, account)` |
-| Get Position | `get_position(token)` | `hl.get_position(symbol, account)` |
-| Close Position | `chunk_kill(token)` | `hl.kill_switch(symbol, account)` |
-| Check PnL | `get_position(token)` | `hl.pnl_close(symbol, tp, sl, account)` |
+### 1. Test Exchange Manager
+```bash
+python src/scripts/test_exchange_manager.py
+```
 
-## Agent Examples
+### 2. Test HyperLiquid Functions
+```bash
+python src/scripts/test_hyperliquid_mm.py
+```
 
-### Trading Agent
+### 3. Run Example Agent
+```bash
+# Set EXCHANGE='hyperliquid' in config.py first
+python src/agents/example_unified_agent.py
+```
+
+## Complete Example Agent
+
 ```python
-# At top of trading_agent.py
-EXCHANGE = 'hyperliquid'  # Configure exchange
+#!/usr/bin/env python3
+"""Example agent that works with both exchanges"""
 
-# In analyze_market_data()
-if EXCHANGE == 'hyperliquid':
-    import nice_funcs_hyperliquid as hl
-    account = eth_account.Account.from_key(os.getenv('HYPER_LIQUID_KEY'))
+from src.exchange_manager import ExchangeManager
+from src.config import EXCHANGE, get_active_tokens
+from termcolor import cprint
 
-    # Use HyperLiquid for BTC/ETH/SOL
-    for symbol in ['BTC', 'ETH', 'SOL']:
-        price = hl.get_current_price(symbol)
-        # ... analysis logic
+class HybridAgent:
+    def __init__(self):
+        self.em = ExchangeManager()
+        cprint(f"✅ Agent initialized for {EXCHANGE}", "green")
 
-        if should_buy:
-            hl.market_buy(symbol, 100, account)
-else:
-    # Use Solana for memecoins
-    from nice_funcs import market_buy
-    market_buy(token_address, 100)
+    def check_all_positions(self):
+        """Works for both exchanges!"""
+        tokens = get_active_tokens()
+
+        for token in tokens:
+            position = self.em.get_position(token)
+            if position['has_position']:
+                cprint(f"{token}: {position['size']} @ ${position['entry_price']:.2f}", "cyan")
+                cprint(f"  PnL: {position['pnl_percent']:.2f}%",
+                      "green" if position['pnl_percent'] > 0 else "red")
+
+    def execute_trade(self, token, amount):
+        """Same code works for both exchanges!"""
+        # Entry
+        self.em.market_buy(token, amount)
+
+        # Check position
+        position = self.em.get_position(token)
+
+        # Exit if profitable
+        if position['pnl_percent'] > 5:
+            self.em.chunk_kill(token)
+
+if __name__ == "__main__":
+    agent = HybridAgent()
+    agent.check_all_positions()
 ```
 
-### Risk Agent
-```python
-# Check positions on both exchanges
-def check_all_risk():
-    total_risk = 0
+## Troubleshooting
 
-    # Solana positions
-    from nice_funcs import get_all_positions
-    solana_positions = get_all_positions()
-
-    # HyperLiquid positions
-    import nice_funcs_hyperliquid as hl
-    account = eth_account.Account.from_key(os.getenv('HYPER_LIQUID_KEY'))
-    hl_positions = hl.get_all_positions(account)
-
-    # Combine risk
-    return total_risk
+### "HYPER_LIQUID_KEY not found"
+Add to `.env`:
+```
+HYPER_LIQUID_KEY=0x... (your Ethereum private key)
 ```
 
-## When to Use Which
+### "Order must have minimum value of $10"
+HyperLiquid requires minimum $10 per order. The ExchangeManager automatically handles this.
+
+### "Price must be divisible by tick size"
+BTC requires whole number prices. The ExchangeManager handles rounding automatically.
+
+### Position Not Showing After Market Order
+HyperLiquid orders need time to settle. Wait 2-3 seconds after execution.
+
+## When to Use Which Exchange
 
 ### Use HyperLiquid for:
-- BTC, ETH, SOL perpetuals
-- Leveraged trading (up to 50x)
-- Lower fees on majors
-- Better liquidity on BTC/ETH
+- **Major cryptocurrencies** (BTC, ETH, SOL)
+- **Leveraged trading** (up to 50x)
+- **Lower fees** on high volume
+- **Shorting** capability
+- **Professional trading** with better liquidity
 
 ### Use Solana for:
-- Memecoins
-- New token launches
-- Spot trading
-- Tokens not on HyperLiquid
+- **Memecoins** and new launches
+- **Small cap tokens**
+- **Spot trading** (actually owning tokens)
+- **DeFi interactions**
+- **Tokens not on HyperLiquid**
 
-## Testing
+## Advanced: Hybrid Trading
 
-```bash
-# Test HyperLiquid functions
-python src/scripts/test_hyperliquid_mm.py
+Future feature - route different assets to optimal exchanges:
 
-# Test hybrid setup
-python src/scripts/example_hybrid_agent.py
+```python
+# In config.py (coming soon)
+TOKEN_EXCHANGE_MAP = {
+    'BTC': 'hyperliquid',  # Better liquidity
+    'ETH': 'hyperliquid',  # Lower fees
+    'BONK': 'solana',      # Only on Solana
+    'WIF': 'solana'        # Memecoin trading
+}
 ```
 
-## Tips
+## Summary
 
-1. **Keep imports clear**: Use aliases to avoid confusion
-   ```python
-   import nice_funcs as sol
-   import nice_funcs_hyperliquid as hl
-   ```
+✅ **One line change** in config.py to switch exchanges
+✅ **Same functions** work for both Solana and HyperLiquid
+✅ **Automatic handling** of differences (leverage, parameters, etc.)
+✅ **Backward compatible** with existing code
 
-2. **Handle accounts properly**: HyperLiquid needs account object
-   ```python
-   account = eth_account.Account.from_key(HYPER_LIQUID_KEY)
-   ```
-
-3. **Symbol differences**:
-   - Solana: Contract addresses
-   - HyperLiquid: Symbol strings ('BTC', 'ETH')
-
-4. **Size differences**:
-   - Solana: Token amounts
-   - HyperLiquid: USD amounts
+🌙 Trade anywhere with Moon Dev's Exchange Manager! 🚀
