@@ -106,10 +106,11 @@ class OllamaModel(BaseModel):
                 }
             }
             
-            # Make the request
+            # Make the request with 90 second timeout
             response = requests.post(
                 f"{self.base_url}/chat",
-                json=data
+                json=data,
+                timeout=90  # Match swarm timeout
             )
             
             if response.status_code == 200:
@@ -129,7 +130,13 @@ class OllamaModel(BaseModel):
 
         except Exception as e:
             cprint(f"❌ Error generating response: {str(e)}", "red")
-            raise
+            # Don't re-raise - let swarm agent handle failed responses gracefully
+            return ModelResponse(
+                content="",
+                raw_response={"error": str(e)},
+                model_name=self.model_name,
+                usage=None
+            )
     
     def __str__(self):
         return f"OllamaModel(model={self.model_name})"

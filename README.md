@@ -15,7 +15,7 @@ feel free to join [our discord](https://discord.gg/8UPuVZ53bh) if you beleive ai
 📀 follow all updates here on youtube: https://www.youtube.com/playlist?list=PLXrNVMjRZUJg4M4uz52iGd1LhXXGVbIFz
 
 ## Live Agents
-- Trading Agent (`trading_agent.py`): Example agent that analyzes token data via LLM to make basic trade decisions
+- **Trading Agent** (`trading_agent.py`): **DUAL-MODE AI trading system** - Toggle between single model (fast ~10s) or swarm mode (6-model consensus ~45-60s). Swarm mode queries Claude 4.5, GPT-5, Gemini 2.5, Grok-4, DeepSeek, and DeepSeek-R1 local for majority vote trading decisions. Configure via `USE_SWARM_MODE` in config.py 🌊🤖
 - Strategy Agent (`strategy_agent.py`): Manages and executes trading strategies placed in the strategies folder
 - Risk Agent (`risk_agent.py`): Monitors and manages portfolio risk, enforcing position limits and PnL thresholds
 - Copy Agent (`copy_agent.py`): monitors copy bot for potential trades
@@ -114,6 +114,130 @@ python 3.10.9 is what was used during dev
    - Monitor logs for performance
 
 ---
+
+## 🌊 Swarm Trading System
+
+The **Trading Agent** (`src/agents/trading_agent.py`) is a **fully self-contained, dual-mode AI trading system**.
+
+### ⚙️ Configuration - All in One Place
+**ALL settings are at the top of `src/agents/trading_agent.py` (lines 55-95)**
+
+No need to edit multiple files - everything is configured in the trading agent itself:
+
+```python
+# 🌊 AI MODE (line 71)
+USE_SWARM_MODE = True  # True = swarm, False = single model
+
+# 📈 TRADING MODE (line 75)
+LONG_ONLY = True  # True = Long positions only (Solana on-chain, no shorting)
+                  # False = Long & Short (HyperLiquid perpetuals)
+
+# 💰 POSITION SIZING (lines 93-96)
+usd_size = 25                    # Target position size
+max_usd_order_size = 3           # Order chunk size
+MAX_POSITION_PERCENTAGE = 30     # Max % per position
+CASH_PERCENTAGE = 20             # Min cash buffer
+
+# 📊 MARKET DATA (lines 75-79)
+DAYSBACK_4_DATA = 3              # Days of history
+DATA_TIMEFRAME = '1H'            # Bar timeframe
+# Options: 1m, 3m, 5m, 15m, 30m, 1H, 2H, 4H, 6H, 8H, 12H, 1D, 3D, 1W, 1M
+
+# 🎯 TOKENS (lines 93-96)
+# ⚠️ ALL tokens in this list will be analyzed (one at a time)
+MONITORED_TOKENS = [
+    # '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump',  # FART (disabled)
+    'DitHyRMQiSDhn5cnKMJV2CDDt6sVct96YrECiM49pump',     # housecoin (active)
+]
+```
+
+**⚠️ Important:** The swarm analyzes **ALL tokens** in `MONITORED_TOKENS` one at a time. Each token takes ~60 seconds in swarm mode. Comment out tokens you don't want to trade by adding `#` at the start of the line.
+
+### 🤖 Single Model Mode (Fast)
+- Uses one AI model for quick trading decisions
+- Response time: ~10 seconds per token
+- Best for: Fast execution, high-frequency strategies
+- Set `USE_SWARM_MODE = False` and configure `AI_MODEL_TYPE`
+
+### 🌊 Swarm Mode (Consensus)
+- Queries **6 AI models simultaneously** for consensus voting
+- Response time: ~45-60 seconds per token
+- Each model votes: **"Buy"**, **"Sell"**, or **"Do Nothing"**
+- Majority decision wins with confidence percentage
+- Best for: Higher confidence trades, 15-minute+ timeframes
+
+**Trading Actions:**
+- **"Buy"** = Bullish signal (open/maintain long position)
+- **"Sell"** = Bearish signal (close long position)
+- **"Do Nothing"** = Hold current position unchanged (no action taken)
+
+**Trading Modes:**
+
+Set `LONG_ONLY` to match your trading platform:
+
+- **True (Solana On-Chain - Default):**
+  - Long positions only (no shorting available)
+  - **"Buy"** = Opens/maintains long position
+  - **"Sell"** = Closes long position (exits to cash)
+  - **"Sell" with no position** = Does nothing (can't short)
+  - **Use case:** Spot trading on Solana, token trading
+
+- **False (HyperLiquid Perpetuals):**
+  - Long AND short positions available
+  - **"Buy"** = Opens/maintains long position
+  - **"Sell"** = Closes long OR opens short position
+  - **"Sell" with no position** = Can open short
+  - **Use case:** Perpetual futures on HyperLiquid
+
+**Portfolio Allocation:**
+- Automatically allocates capital when swarm recommends BUY signals
+- Skipped when all signals are SELL or DO NOTHING
+- Manages position sizing based on confidence levels
+
+**Active Swarm Models:**
+1. **Claude Sonnet 4.5** - Anthropic's latest reasoning model
+2. **GPT-5** - OpenAI's most advanced model
+3. **Gemini 2.5 Flash** - Google's fast multimodal model
+4. **Grok-4 Fast Reasoning** - xAI's 2M context window model
+5. **DeepSeek Chat** - DeepSeek API reasoning model
+6. **DeepSeek-R1 Local** - Local reasoning model (free!)
+
+**Example Swarm Output:**
+```
+🌊 Swarm Consensus: BUY with 83% agreement
+
+Swarm Consensus (6 models voted):
+  Buy: 5 votes
+  Sell: 0 votes
+  Do Nothing: 1 vote
+
+Individual votes:
+  - claude: Buy
+  - openai: Buy
+  - gemini: Buy
+  - xai: Buy
+  - deepseek: Buy
+  - ollama: Do Nothing
+```
+
+**Market Data Details:**
+- Current settings: 3 days @ 1H = **~72 bars per token**
+- For 15-min bars: Change `DATA_TIMEFRAME = '15m'` = **~288 bars**
+- Each query includes: Full OHLCV dataframe, strategy signals, token metadata
+
+**How to Run:**
+```bash
+# Edit settings at top of file
+vim src/agents/trading_agent.py  # Lines 55-95
+
+# Run standalone
+python src/agents/trading_agent.py
+
+# Or via main orchestrator
+python src/main.py  # Enable in ACTIVE_AGENTS
+```
+
+---
 ## 🗺️ ROADMAP
 
 ### In Progress
@@ -138,8 +262,8 @@ python 3.10.9 is what was used during dev
    - looks at volume and liquidations to determine position sizing
 - [ ] **regime agents**
    - constantly determining the trading regime we are in and running strategies for that regime
-- [ ] **execution agents**
-   - when a signal is triggered ask a swarm of agents if we should abide..
+- [x] **execution agents** ✅
+   - when a signal is triggered ask a swarm of agents if we should abide (IMPLEMENTED: Swarm Mode in Trading Agent)
 - [ ] **polymarket sweeper agent**
    - watches our polymarket sweeper dashboard and follows some sweepers
 

@@ -45,19 +45,35 @@ def collect_token_data(token, days_back=DAYSBACK_4_DATA, timeframe=DATA_TIMEFRAM
         cprint(f"❌ Moon Dev's AI Agent encountered an error: {str(e)}", "white", "on_red")
         return None
 
-def collect_all_tokens():
-    """Collect OHLCV data for all monitored tokens"""
+def collect_all_tokens(tokens=None, days_back=None, timeframe=None):
+    """
+    Collect OHLCV data for all monitored tokens
+
+    Args:
+        tokens: List of token addresses (defaults to MONITORED_TOKENS from config)
+        days_back: Days of historical data (defaults to DAYSBACK_4_DATA from config)
+        timeframe: Bar timeframe (defaults to DATA_TIMEFRAME from config)
+    """
     market_data = {}
-    
+
+    # Use defaults from config if not provided
+    if tokens is None:
+        tokens = MONITORED_TOKENS
+    if days_back is None:
+        days_back = DAYSBACK_4_DATA
+    if timeframe is None:
+        timeframe = DATA_TIMEFRAME
+
     cprint("\n🔍 Moon Dev's AI Agent starting market data collection...", "white", "on_blue")
-    
-    for token in MONITORED_TOKENS:
-        data = collect_token_data(token)
+    cprint(f"📊 Settings: {days_back} days @ {timeframe} timeframe", "cyan")
+
+    for token in tokens:
+        data = collect_token_data(token, days_back, timeframe)
         if data is not None:
             market_data[token] = data
-            
+
     cprint("\n✨ Moon Dev's AI Agent completed market data collection!", "white", "on_green")
-    
+
     return market_data
 
 if __name__ == "__main__":

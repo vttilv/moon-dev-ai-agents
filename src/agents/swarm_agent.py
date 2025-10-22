@@ -66,8 +66,7 @@ SWARM_MODELS = {
     "gemini": (True, "gemini", "gemini-2.5-flash"),  # Gemini 2.5 Flash - Fast & works with 2048+ tokens!
     "xai": (True, "xai", "grok-4-fast-reasoning"),  # Grok-4 fast reasoning
     "deepseek": (True, "deepseek", "deepseek-chat"),  # DeepSeek for reasoning (API)
-    "ollama": (True, "ollama", "DeepSeek-R1:latest"),  # DeepSeek-R1 local model (free!)
-    # Note: Groq removed due to model deprecation issues
+    "ollama": (True, "ollama", "DeepSeek-R1:latest"),  # DeepSeek-R1 local model - 90s timeout
 }
 
 # Default parameters for model queries
@@ -75,7 +74,7 @@ DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_TOKENS = 2048  # Increased for Gemini 2.5 compatibility (needs 2048+ minimum)
 
 # Timeout for each model (seconds)
-MODEL_TIMEOUT = 30
+MODEL_TIMEOUT = 90
 
 # Consensus Reviewer - Synthesizes all responses into a clean summary
 CONSENSUS_REVIEWER_MODEL = ("claude", "claude-sonnet-4-5")  # (model_type, model_name)
@@ -210,6 +209,11 @@ class SwarmAgent:
         cprint(f"\n🌊 Initiating Swarm Query with {len(self.active_models)} models...", "cyan", attrs=['bold'])
         cprint(f"📝 Prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''}", "blue")
 
+        # Show which models are being called in parallel
+        cprint(f"\n🚀 Calling models in parallel:", "yellow", attrs=['bold'])
+        for provider, model_info in self.active_models.items():
+            cprint(f"   → {provider.upper()}: {model_info['name']}", "cyan")
+
         start_time = time.time()
         all_responses = {}
 
@@ -227,15 +231,64 @@ class SwarmAgent:
                 for provider, model_info in self.active_models.items()
             }
 
-            # Collect results as they complete
-            for future in as_completed(futures):
-                provider, response = future.result(timeout=MODEL_TIMEOUT)
-                all_responses[provider] = response
+            # Track which models are still pending
+            completed_count = 0
+            total_models = len(futures)
 
-                if response["success"]:
-                    cprint(f"   ✅ {provider} responded ({response['response_time']}s)", "green")
-                else:
-                    cprint(f"   ❌ {provider} failed", "red")
+            # Collect results as they complete (with timeout handling)
+            try:
+                for future in as_completed(futures, timeout=MODEL_TIMEOUT + 10):
+                    provider = futures[future]
+                    completed_count += 1
+
+                    cprint(f"\n⏳ Waiting for responses... ({completed_count}/{total_models} completed)", "yellow")
+                    cprint(f"🔄 Processing: {provider}...", "cyan")
+
+                    try:
+                        provider, response = future.result(timeout=5)  # 5 second timeout per result
+                        all_responses[provider] = response
+
+                        if response["success"]:
+                            cprint(f"   ✅ {provider} responded ({response['response_time']}s)", "green")
+                        else:
+                            cprint(f"   ❌ {provider} failed: {response['error']}", "red")
+
+                    except TimeoutError:
+                        cprint(f"   ⏰ {provider} timed out (>{MODEL_TIMEOUT}s) - skipping", "yellow")
+                        all_responses[provider] = {
+                            "provider": provider,
+                            "model": "timeout",
+                            "response": None,
+                            "success": False,
+                            "error": f"Timeout after {MODEL_TIMEOUT}s",
+                            "response_time": MODEL_TIMEOUT
+                        }
+                    except Exception as e:
+                        cprint(f"   💥 {provider} error: {str(e)}", "red")
+                        all_responses[provider] = {
+                            "provider": provider,
+                            "model": "error",
+                            "response": None,
+                            "success": False,
+                            "error": str(e),
+                            "response_time": 0
+                        }
+
+            except TimeoutError:
+                # as_completed timed out waiting for all futures
+                cprint(f"\n⏰ Overall timeout reached - some models didn't respond", "yellow")
+                # Mark any remaining futures as timed out
+                for future, provider in futures.items():
+                    if provider not in all_responses:
+                        cprint(f"   ⏰ {provider} never responded - marking as timeout", "red")
+                        all_responses[provider] = {
+                            "provider": provider,
+                            "model": "timeout",
+                            "response": None,
+                            "success": False,
+                            "error": f"Global timeout - no response received",
+                            "response_time": MODEL_TIMEOUT
+                        }
 
         # Generate consensus review summary (with model mapping)
         consensus_summary, model_mapping = self._generate_consensus_review(all_responses, prompt)

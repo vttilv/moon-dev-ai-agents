@@ -14,10 +14,10 @@ SOL_ADDRESS = "So11111111111111111111111111111111111111111"   # Never trade or c
 EXCLUDED_TOKENS = [USDC_ADDRESS, SOL_ADDRESS]
 
 # Token List for Trading 📋
+# NOTE: Trading Agent now has its own token list - see src/agents/trading_agent.py lines 101-104
 MONITORED_TOKENS = [
-    '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump',    # 🌬️ FART
-    # 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',    # 💵 USDC
-    'DitHyRMQiSDhn5cnKMJV2CDDt6sVct96YrECiM49pump' # housecoin, 1 house = 1 housecoin
+    # '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump',    # 🌬️ FART
+    # 'DitHyRMQiSDhn5cnKMJV2CDDt6sVct96YrECiM49pump'     # housecoin
 ]
 
 # Moon Dev's Token Trading List 🚀
