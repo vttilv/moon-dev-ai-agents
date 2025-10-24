@@ -9,6 +9,26 @@ This is an experimental AI trading system that orchestrates 48+ specialized AI a
 ## Key Development Commands
 
 ### Environment Setup
+
+**PRIMARY: Use UV Package Manager (Recommended)**
+```bash
+# Install dependencies using UV (FAST!)
+uv pip install -r requirements.txt
+
+# Or use UV with pyproject.toml
+uv pip sync
+
+# Add a new package with UV
+uv pip install package-name
+
+# Update pyproject.toml after adding packages
+# UV automatically manages dependencies in pyproject.toml
+
+# IMPORTANT: UV is 10-100x faster than pip
+# Always prefer UV for package management
+```
+
+**FALLBACK: Traditional conda/pip (if UV unavailable)**
 ```bash
 # Use existing conda environment (DO NOT create new virtual environments)
 conda activate tflow
@@ -18,6 +38,21 @@ pip install -r requirements.txt
 
 # IMPORTANT: Update requirements.txt every time you add a new package
 pip freeze > requirements.txt
+```
+
+### Validation Commands
+```bash
+# Validate entire setup (dependencies, APIs, structure)
+python validate_setup.py
+
+# Quick dependency check
+python -c "import anthropic, openai, pandas; print('Core deps OK')"
+
+# Test specific agent
+python src/agents/coingecko_agent.py
+
+# Test free market data API
+python src/agents/free_market_data_api.py
 ```
 
 ### Running the System
@@ -229,3 +264,114 @@ This is an **experimental, educational project** demonstrating AI agent patterns
 - No token associated with project (avoid scams)
 
 The goal is to democratize AI agent development and show practical multi-agent orchestration patterns that can be applied beyond trading.
+
+---
+
+## Batch Processing & Parallel Operations
+
+### When to Use Batch Processing
+
+**ALWAYS batch operations when possible for maximum efficiency:**
+
+1. **File Operations** - Read/Write/Edit multiple files in one message
+2. **API Calls** - Combine independent API requests
+3. **Tool Calls** - Group related tool invocations
+4. **Command Execution** - Chain bash commands with `&&` or `;`
+
+### Batch Processing Patterns
+
+**✅ CORRECT - Batched Operations:**
+```python
+# Multiple file operations in parallel
+[Single Message]:
+  - Read("file1.py")
+  - Read("file2.py")
+  - Read("file3.py")
+  - Write("output1.py", content1)
+  - Write("output2.py", content2)
+  - Bash("mkdir -p src/{agents,models,data}")
+```
+
+**❌ WRONG - Sequential Operations:**
+```python
+# Slow, inefficient approach
+Message 1: Read("file1.py")
+Message 2: Read("file2.py")
+Message 3: Write("output1.py")
+# This is 3x slower!
+```
+
+### Anthropic Batch API Integration
+
+**For large-scale operations, use Anthropic's Batch API:**
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(api_key=os.getenv("ANTHROPIC_KEY"))
+
+# Create batch request for multiple agent decisions
+batch = client.messages.batches.create(
+    requests=[
+        {
+            "custom_id": "token-analysis-1",
+            "params": {
+                "model": "claude-3-5-sonnet-20241022",
+                "max_tokens": 1024,
+                "messages": [{"role": "user", "content": "Analyze BTC..."}]
+            }
+        },
+        {
+            "custom_id": "token-analysis-2",
+            "params": {
+                "model": "claude-3-5-sonnet-20241022",
+                "max_tokens": 1024,
+                "messages": [{"role": "user", "content": "Analyze ETH..."}]
+            }
+        }
+        # ... up to 10,000 requests
+    ]
+)
+
+# Poll for results (async processing)
+result = client.messages.batches.retrieve(batch.id)
+```
+
+**Benefits:**
+- **50% cost reduction** for batch requests
+- **24-hour processing window** (not real-time)
+- **Up to 10,000 requests** per batch
+- **Rate limit exempt** (double throughput)
+
+**When to Use Batch API:**
+- Bulk token analysis (100+ tokens)
+- Historical data backtesting
+- Research agent aggregation
+- Non-time-sensitive operations
+
+**When NOT to Use Batch API:**
+- Real-time trading decisions
+- Sub-minute response requirements
+- Interactive agents (chat, phone)
+
+### Command Chaining
+
+**Efficient bash command patterns:**
+```bash
+# Sequential execution (stops on error)
+mkdir -p data && cd data && wget https://example.com/data.csv
+
+# Parallel execution (all commands run)
+mkdir src; mkdir data; mkdir tests
+
+# Conditional execution
+test -f .env || cp .env.example .env
+```
+
+### Performance Tips
+
+1. **Group related operations** - Don't split artificially
+2. **Use parallel tools** when available (xargs, GNU parallel)
+3. **Batch API for scale** - 100+ similar requests
+4. **Chain commands** - Reduce shell invocations
+5. **Read once, use many** - Cache file contents in memory
